@@ -2,7 +2,7 @@ import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.m
 
 
 // ============================================================
-// GAME
+// GAME / UI
 // ============================================================
 
 const game = document.getElementById("game");
@@ -82,7 +82,9 @@ const flashlight = new THREE.PointLight(
     12
 );
 
-flashlight.position.copy(camera.position);
+flashlight.position.copy(
+    camera.position
+);
 
 scene.add(flashlight);
 
@@ -91,16 +93,18 @@ scene.add(flashlight);
 // DUNGEON
 // ============================================================
 
-const wallMaterial = new THREE.MeshStandardMaterial({
-    color: 0x444444,
-    roughness: 1
-});
+const wallMaterial =
+    new THREE.MeshStandardMaterial({
+        color: 0x444444,
+        roughness: 1
+    });
 
 
-const floorMaterial = new THREE.MeshStandardMaterial({
-    color: 0x181818,
-    roughness: 1
-});
+const floorMaterial =
+    new THREE.MeshStandardMaterial({
+        color: 0x181818,
+        roughness: 1
+    });
 
 
 // 바닥
@@ -115,9 +119,12 @@ floor.rotation.x = -Math.PI / 2;
 scene.add(floor);
 
 
-// 벽을 만드는 함수
+// 벽 목록
 
 const walls = [];
+
+
+// 벽 생성
 
 function createWall(x, z, width, depth) {
 
@@ -146,7 +153,7 @@ function createWall(x, z, width, depth) {
 // 던전 구조
 // ============================================================
 
-// 바깥 벽
+// 외벽
 
 createWall(0, -15, 30, 1);
 createWall(0, 15, 30, 1);
@@ -173,15 +180,19 @@ createWall(5, -3, 1, 7);
 // ============================================================
 
 const player = {
+
     hp: 100,
 
     speed: 5,
 
     ammo: 12,
+
     maxAmmo: 12,
 
     rotationY: 0,
+
     rotationX: 0
+
 };
 
 
@@ -189,63 +200,159 @@ const player = {
 
 const keys = {};
 
-window.addEventListener("keydown", event => {
 
-    keys[event.code] = true;
+window.addEventListener(
+    "keydown",
+    event => {
 
-});
+        keys[event.code] = true;
+
+    }
+);
 
 
-window.addEventListener("keyup", event => {
+window.addEventListener(
+    "keyup",
+    event => {
 
-    keys[event.code] = false;
+        keys[event.code] = false;
 
-});
+    }
+);
 
 
 // ============================================================
 // POINTER LOCK
 // ============================================================
 
-startButton.addEventListener("click", () => {
+// 게임 시작 버튼
 
-    intro.style.display = "none";
-    game.style.display = "block";
+startButton.addEventListener(
+    "click",
+    () => {
 
-    renderer.domElement.requestPointerLock();
-});
+        console.log(
+            "게임 시작 버튼 클릭!"
+        );
 
+
+        intro.style.display = "none";
+
+        game.style.display = "block";
+
+
+        // 마우스를 게임 화면에 잠금
+
+        renderer.domElement.requestPointerLock();
+
+    }
+);
+
+
+// Pointer Lock 상태 확인
+
+document.addEventListener(
+    "pointerlockchange",
+    () => {
+
+        const locked =
+            document.pointerLockElement ===
+            renderer.domElement;
+
+
+        console.log(
+            "Pointer Lock:",
+            locked
+        );
+
+
+        if (locked) {
+
+            console.log(
+                "마우스가 게임 화면에 잠겼습니다."
+            );
+
+        }
+        else {
+
+            console.log(
+                "Pointer Lock이 해제되었습니다."
+            );
+
+        }
+
+    }
+);
+
+
+// Pointer Lock 오류 확인
+
+document.addEventListener(
+    "pointerlockerror",
+    () => {
+
+        console.error(
+            "Pointer Lock을 사용할 수 없습니다."
+        );
+
+    }
+);
+
+
+// ============================================================
+// MOUSE LOOK
+// ============================================================
 
 document.addEventListener(
     "mousemove",
     event => {
 
+        // Pointer Lock이 걸려 있지 않으면 무시
+
         if (
-            document.pointerLockElement !== renderer.domElement
+            document.pointerLockElement !==
+            renderer.domElement
         ) {
             return;
         }
 
+
         const sensitivity = 0.002;
 
+
+        // 좌우
+
         player.rotationY -=
-            event.movementX * sensitivity;
+            event.movementX *
+            sensitivity;
+
+
+        // 위아래
 
         player.rotationX -=
-            event.movementY * sensitivity;
+            event.movementY *
+            sensitivity;
+
 
         // 위아래 회전 제한
 
-        player.rotationX = THREE.MathUtils.clamp(
-            player.rotationX,
-            -Math.PI / 2,
-            Math.PI / 2
-        );
+        player.rotationX =
+            THREE.MathUtils.clamp(
+                player.rotationX,
+                -Math.PI / 2,
+                Math.PI / 2
+            );
 
-        camera.rotation.order = "YXZ";
+
+        // FPS 카메라 회전 순서
+
+        camera.rotation.order =
+            "YXZ";
+
 
         camera.rotation.y =
             player.rotationY;
+
 
         camera.rotation.x =
             player.rotationX;
@@ -263,42 +370,53 @@ const playerRadius = 0.35;
 
 function checkCollision(position) {
 
-    const playerBox = new THREE.Box3(
-        new THREE.Vector3(
-            position.x - playerRadius,
-            0.2,
-            position.z - playerRadius
-        ),
-        new THREE.Vector3(
-            position.x + playerRadius,
-            2,
-            position.z + playerRadius
-        )
-    );
+    const playerBox =
+        new THREE.Box3(
+            new THREE.Vector3(
+                position.x - playerRadius,
+                0.2,
+                position.z - playerRadius
+            ),
+
+            new THREE.Vector3(
+                position.x + playerRadius,
+                2,
+                position.z + playerRadius
+            )
+        );
 
 
     for (const wall of walls) {
 
         const wallBox =
-            new THREE.Box3().setFromObject(wall);
+            new THREE.Box3()
+                .setFromObject(wall);
+
 
         if (
-            playerBox.intersectsBox(wallBox)
+            playerBox.intersectsBox(
+                wallBox
+            )
         ) {
+
             return true;
+
         }
 
     }
 
+
     return false;
+
 }
 
 
 // ============================================================
-// MOVEMENT
+// PLAYER MOVEMENT
 // ============================================================
 
-const clock = new THREE.Clock();
+const clock =
+    new THREE.Clock();
 
 
 function updatePlayer(delta) {
@@ -307,25 +425,40 @@ function updatePlayer(delta) {
         new THREE.Vector3();
 
 
-    camera.getWorldDirection(direction);
+    // 카메라가 바라보는 방향
+
+    camera.getWorldDirection(
+        direction
+    );
+
+
+    // 위아래 방향 제거
 
     direction.y = 0;
 
     direction.normalize();
 
 
+    // 오른쪽 방향
+
     const right =
         new THREE.Vector3();
+
 
     right.crossVectors(
         direction,
         new THREE.Vector3(0, 1, 0)
-    ).normalize();
+    );
+
+
+    right.normalize();
 
 
     const movement =
         new THREE.Vector3();
 
+
+    // W
 
     if (keys["KeyW"]) {
 
@@ -333,17 +466,26 @@ function updatePlayer(delta) {
 
     }
 
+
+    // S
+
     if (keys["KeyS"]) {
 
         movement.sub(direction);
 
     }
 
+
+    // D
+
     if (keys["KeyD"]) {
 
         movement.add(right);
 
     }
+
+
+    // A
 
     if (keys["KeyA"]) {
 
@@ -352,9 +494,12 @@ function updatePlayer(delta) {
     }
 
 
+    // 움직임이 있다면
+
     if (movement.lengthSq() > 0) {
 
         movement.normalize();
+
 
         movement.multiplyScalar(
             player.speed * delta
@@ -364,10 +509,19 @@ function updatePlayer(delta) {
         const newPosition =
             camera.position.clone();
 
-        newPosition.add(movement);
+
+        newPosition.add(
+            movement
+        );
 
 
-        if (!checkCollision(newPosition)) {
+        // 벽 충돌 확인
+
+        if (
+            !checkCollision(
+                newPosition
+            )
+        ) {
 
             camera.position.copy(
                 newPosition
@@ -377,6 +531,8 @@ function updatePlayer(delta) {
 
     }
 
+
+    // 손전등 위치
 
     flashlight.position.copy(
         camera.position
@@ -435,13 +591,18 @@ function createEnemy(x, z) {
 }
 
 
-// 적 생성
+// 적 배치
 
 createEnemy(-10, -10);
+
 createEnemy(10, -10);
+
 createEnemy(-10, 10);
+
 createEnemy(10, 10);
+
 createEnemy(0, -10);
+
 
 updateEnemyCount();
 
@@ -458,7 +619,9 @@ function updateEnemies(delta) {
         i--
     ) {
 
-        const enemy = enemies[i];
+        const enemy =
+            enemies[i];
+
 
         const direction =
             camera.position
@@ -470,23 +633,36 @@ function updateEnemies(delta) {
             direction.length();
 
 
-        if (distance > 1.7) {
+        // 플레이어에게 접근
+
+        if (
+            distance > 1.7
+        ) {
 
             direction.normalize();
 
+
             const movement =
                 direction.multiplyScalar(
-                    enemy.userData.speed * delta
+                    enemy.userData.speed *
+                    delta
                 );
 
 
             const newPosition =
                 enemy.position.clone();
 
-            newPosition.add(movement);
+
+            newPosition.add(
+                movement
+            );
 
 
-            if (!checkCollision(newPosition)) {
+            if (
+                !checkCollision(
+                    newPosition
+                )
+            ) {
 
                 enemy.position.copy(
                     newPosition
@@ -495,9 +671,13 @@ function updateEnemies(delta) {
             }
 
         }
+
+        // 공격
+
         else {
 
-            enemy.userData.attackTimer -= delta;
+            enemy.userData.attackTimer -=
+                delta;
 
 
             if (
@@ -506,11 +686,17 @@ function updateEnemies(delta) {
 
                 player.hp -= 10;
 
-                enemy.userData.attackTimer = 1;
+
+                enemy.userData.attackTimer =
+                    1;
+
 
                 updateHUD();
 
-                if (player.hp <= 0) {
+
+                if (
+                    player.hp <= 0
+                ) {
 
                     endGame();
 
@@ -519,6 +705,7 @@ function updateEnemies(delta) {
             }
 
         }
+
 
         // 플레이어 바라보기
 
@@ -545,6 +732,8 @@ window.addEventListener(
     "mousedown",
     event => {
 
+        // Pointer Lock이 아니면 발사하지 않음
+
         if (
             document.pointerLockElement !==
             renderer.domElement
@@ -552,9 +741,15 @@ window.addEventListener(
             return;
         }
 
-        if (event.button !== 0) {
+
+        // 좌클릭만
+
+        if (
+            event.button !== 0
+        ) {
             return;
         }
+
 
         shoot();
 
@@ -564,9 +759,15 @@ window.addEventListener(
 
 function shoot() {
 
-    if (player.ammo <= 0) {
+    // 탄약 없음
 
-        showMessage("RELOAD!");
+    if (
+        player.ammo <= 0
+    ) {
+
+        showMessage(
+            "RELOAD!"
+        );
 
         return;
 
@@ -578,7 +779,7 @@ function shoot() {
     updateHUD();
 
 
-    // 화면 중앙에서 Ray 발사
+    // 화면 중앙에서 레이 발사
 
     raycaster.setFromCamera(
         new THREE.Vector2(0, 0),
@@ -592,13 +793,18 @@ function shoot() {
         );
 
 
-    if (hits.length > 0) {
+    // 적을 맞혔는가?
+
+    if (
+        hits.length > 0
+    ) {
 
         const enemy =
             hits[0].object;
 
 
-        enemy.userData.hp -= 10;
+        enemy.userData.hp -=
+            10;
 
 
         // 피격 효과
@@ -608,29 +814,44 @@ function shoot() {
         );
 
 
-        setTimeout(() => {
+        setTimeout(
+            () => {
 
-            if (enemy.parent) {
+                if (
+                    enemy.parent
+                ) {
 
-                enemy.material.color.set(
-                    0x8b0000
-                );
+                    enemy.material.color.set(
+                        0x8b0000
+                    );
 
-            }
+                }
 
-        }, 80);
+            },
+            80
+        );
 
+
+        // 적 사망
 
         if (
             enemy.userData.hp <= 0
         ) {
 
-            scene.remove(enemy);
+            scene.remove(
+                enemy
+            );
+
 
             const index =
-                enemies.indexOf(enemy);
+                enemies.indexOf(
+                    enemy
+                );
 
-            if (index !== -1) {
+
+            if (
+                index !== -1
+            ) {
 
                 enemies.splice(
                     index,
@@ -639,9 +860,13 @@ function shoot() {
 
             }
 
+
             updateEnemyCount();
 
-            showMessage("ENEMY DOWN");
+
+            showMessage(
+                "ENEMY DOWN"
+            );
 
         }
 
@@ -658,7 +883,9 @@ window.addEventListener(
     "keydown",
     event => {
 
-        if (event.code === "KeyR") {
+        if (
+            event.code === "KeyR"
+        ) {
 
             reload();
 
@@ -674,16 +901,22 @@ function reload() {
         player.ammo ===
         player.maxAmmo
     ) {
+
         return;
+
     }
 
 
     player.ammo =
         player.maxAmmo;
 
+
     updateHUD();
 
-    showMessage("RELOADING...");
+
+    showMessage(
+        "RELOADED"
+    );
 
 }
 
@@ -695,10 +928,15 @@ function reload() {
 function updateHUD() {
 
     hpText.textContent =
-        Math.max(0, player.hp);
+        Math.max(
+            0,
+            player.hp
+        );
+
 
     ammoText.textContent =
         player.ammo;
+
 
     enemyCountText.textContent =
         enemies.length;
@@ -723,17 +961,25 @@ let messageTimer = null;
 
 function showMessage(text) {
 
-    message.textContent = text;
+    message.textContent =
+        text;
 
 
-    clearTimeout(messageTimer);
+    clearTimeout(
+        messageTimer
+    );
 
 
-    messageTimer = setTimeout(() => {
+    messageTimer =
+        setTimeout(
+            () => {
 
-        message.textContent = "";
+                message.textContent =
+                    "";
 
-    }, 1000);
+            },
+            1000
+        );
 
 }
 
@@ -771,6 +1017,7 @@ window.addEventListener(
             window.innerWidth /
             window.innerHeight;
 
+
         camera.updateProjectionMatrix();
 
 
@@ -801,9 +1048,15 @@ function animate() {
         );
 
 
-    updatePlayer(delta);
+    updatePlayer(
+        delta
+    );
 
-    updateEnemies(delta);
+
+    updateEnemies(
+        delta
+    );
+
 
     renderer.render(
         scene,
@@ -812,6 +1065,10 @@ function animate() {
 
 }
 
+
+// ============================================================
+// START
+// ============================================================
 
 updateHUD();
 
