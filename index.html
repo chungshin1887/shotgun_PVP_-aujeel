@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FVP Dungeon</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <div id="intro">
+        <h1>FVP DUNGEON</h1>
+        <p>RETRO FIRST PERSON SHOOTER</p>
+        <button id="startButton">💻 PC로 플레이</button>
+    </div>
+
+    <div id="game">
+        <div id="crosshair">+</div>
+
+        <div id="hud">
+            <div>HP <span id="hp">100</span></div>
+            <div>ENEMIES <span id="enemyCount">0</span></div>
+            <div>AMMO <span id="ammo">12</span> / 12</div>
+        </div>
+
+        <div id="message"></div>
+
+        <div id="gameover">
+            <h1>GAME OVER</h1>
+            <button onclick="location.reload()">RESTART</button>
+        </div>
+    </div>
+
+    <script type="module" src="./src/main.js"></script>
+
+</body>
+</html>
