@@ -212,7 +212,7 @@ startButton.addEventListener("click", () => {
     intro.style.display = "none";
     game.style.display = "block";
 
-    renderer.domElement.requestPointerLock();
+    
 
 });
 
