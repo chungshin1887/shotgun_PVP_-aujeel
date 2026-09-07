@@ -200,7 +200,6 @@ const player = {
 
 const keys = {};
 
-
 window.addEventListener(
     "keydown",
     event => {
@@ -225,7 +224,7 @@ window.addEventListener(
 // POINTER LOCK
 // ============================================================
 
-// 게임 시작 버튼
+// 게임 시작
 
 startButton.addEventListener(
     "click",
@@ -241,7 +240,7 @@ startButton.addEventListener(
         game.style.display = "block";
 
 
-        // 마우스를 게임 화면에 잠금
+        // 마우스 잠금
 
         renderer.domElement.requestPointerLock();
 
@@ -249,7 +248,30 @@ startButton.addEventListener(
 );
 
 
+// ============================================================
+// 게임 화면 클릭 → Pointer Lock 재획득
+// ============================================================
+
+renderer.domElement.addEventListener(
+    "click",
+    () => {
+
+        if (
+            document.pointerLockElement !==
+            renderer.domElement
+        ) {
+
+            renderer.domElement.requestPointerLock();
+
+        }
+
+    }
+);
+
+
+// ============================================================
 // Pointer Lock 상태 확인
+// ============================================================
 
 document.addEventListener(
     "pointerlockchange",
@@ -285,7 +307,7 @@ document.addEventListener(
 );
 
 
-// Pointer Lock 오류 확인
+// Pointer Lock 오류
 
 document.addEventListener(
     "pointerlockerror",
@@ -307,27 +329,29 @@ document.addEventListener(
     "mousemove",
     event => {
 
-        // Pointer Lock이 걸려 있지 않으면 무시
+        // Pointer Lock 상태가 아니면 무시
 
         if (
             document.pointerLockElement !==
             renderer.domElement
         ) {
+
             return;
+
         }
 
 
         const sensitivity = 0.002;
 
 
-        // 좌우
+        // 좌우 회전
 
         player.rotationY -=
             event.movementX *
             sensitivity;
 
 
-        // 위아래
+        // 위아래 회전
 
         player.rotationX -=
             event.movementY *
@@ -344,7 +368,7 @@ document.addEventListener(
             );
 
 
-        // FPS 카메라 회전 순서
+        // FPS 카메라 회전
 
         camera.rotation.order =
             "YXZ";
@@ -372,6 +396,7 @@ function checkCollision(position) {
 
     const playerBox =
         new THREE.Box3(
+
             new THREE.Vector3(
                 position.x - playerRadius,
                 0.2,
@@ -383,6 +408,7 @@ function checkCollision(position) {
                 2,
                 position.z + playerRadius
             )
+
         );
 
 
@@ -425,14 +451,10 @@ function updatePlayer(delta) {
         new THREE.Vector3();
 
 
-    // 카메라가 바라보는 방향
-
     camera.getWorldDirection(
         direction
     );
 
-
-    // 위아래 방향 제거
 
     direction.y = 0;
 
@@ -494,9 +516,11 @@ function updatePlayer(delta) {
     }
 
 
-    // 움직임이 있다면
+    // 이동
 
-    if (movement.lengthSq() > 0) {
+    if (
+        movement.lengthSq() > 0
+    ) {
 
         movement.normalize();
 
@@ -515,7 +539,7 @@ function updatePlayer(delta) {
         );
 
 
-        // 벽 충돌 확인
+        // 벽 충돌
 
         if (
             !checkCollision(
@@ -594,13 +618,9 @@ function createEnemy(x, z) {
 // 적 배치
 
 createEnemy(-10, -10);
-
 createEnemy(10, -10);
-
 createEnemy(-10, 10);
-
 createEnemy(10, 10);
-
 createEnemy(0, -10);
 
 
@@ -633,7 +653,7 @@ function updateEnemies(delta) {
             direction.length();
 
 
-        // 플레이어에게 접근
+        // 플레이어 추적
 
         if (
             distance > 1.7
@@ -738,16 +758,20 @@ window.addEventListener(
             document.pointerLockElement !==
             renderer.domElement
         ) {
+
             return;
+
         }
 
 
-        // 좌클릭만
+        // 좌클릭
 
         if (
             event.button !== 0
         ) {
+
             return;
+
         }
 
 
@@ -793,7 +817,7 @@ function shoot() {
         );
 
 
-    // 적을 맞혔는가?
+    // 적을 맞혔는지 확인
 
     if (
         hits.length > 0
@@ -832,7 +856,7 @@ function shoot() {
         );
 
 
-        // 적 사망
+        // 적 처치
 
         if (
             enemy.userData.hp <= 0
@@ -1067,7 +1091,7 @@ function animate() {
 
 
 // ============================================================
-// START
+// GAME START
 // ============================================================
 
 updateHUD();
