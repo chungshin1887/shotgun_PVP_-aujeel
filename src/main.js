@@ -17,16 +17,109 @@ const gameover = document.getElementById("gameover");
 
 
 // ============================================================
+// CROSSHAIR
+// ============================================================
+
+const crosshair = document.createElement("div");
+
+crosshair.id = "crosshair";
+
+crosshair.innerHTML = `
+    <div class="crosshair-line horizontal"></div>
+    <div class="crosshair-line vertical"></div>
+`;
+
+document.body.appendChild(crosshair);
+
+
+// 크로스헤어 스타일
+
+const crosshairStyle = document.createElement("style");
+
+crosshairStyle.textContent = `
+
+    #crosshair {
+
+        position: fixed;
+
+        left: 50%;
+        top: 50%;
+
+        width: 22px;
+        height: 22px;
+
+        transform: translate(-50%, -50%);
+
+        pointer-events: none;
+
+        z-index: 5000;
+
+        display: none;
+
+    }
+
+
+    .crosshair-line {
+
+        position: absolute;
+
+        background: white;
+
+        box-shadow:
+            0 0 2px black;
+
+    }
+
+
+    .crosshair-line.horizontal {
+
+        width: 22px;
+        height: 2px;
+
+        left: 0;
+        top: 10px;
+
+    }
+
+
+    .crosshair-line.vertical {
+
+        width: 2px;
+        height: 22px;
+
+        left: 10px;
+        top: 0;
+
+    }
+
+
+    #crosshair.hit {
+
+        transform:
+            translate(-50%, -50%)
+            scale(1.35);
+
+    }
+
+`;
+
+document.head.appendChild(
+    crosshairStyle
+);
+
+
+// ============================================================
 // PAUSE UI
 // ============================================================
 
-// HTML을 따로 수정하지 않고 JS에서 일시정지 화면 생성
+const pauseScreen =
+    document.createElement("div");
 
-const pauseScreen = document.createElement("div");
-
-pauseScreen.id = "pauseScreen";
+pauseScreen.id =
+    "pauseScreen";
 
 pauseScreen.innerHTML = `
+
     <div id="pauseBox">
 
         <div id="pauseTitle">
@@ -38,18 +131,22 @@ pauseScreen.innerHTML = `
         </button>
 
         <div id="pauseHint">
-            ESC를 누르면 게임으로 돌아갈 수 있습니다.
+            계속하기를 누르면 게임이 재개됩니다.
         </div>
 
     </div>
+
 `;
 
-document.body.appendChild(pauseScreen);
+document.body.appendChild(
+    pauseScreen
+);
 
 
-// Pause 화면 스타일
+// Pause 스타일
 
-const pauseStyle = document.createElement("style");
+const pauseStyle =
+    document.createElement("style");
 
 pauseStyle.textContent = `
 
@@ -65,7 +162,8 @@ pauseStyle.textContent = `
 
         justify-content: center;
 
-        background: rgba(0, 0, 0, 0.75);
+        background:
+            rgba(0, 0, 0, 0.75);
 
         z-index: 9999;
 
@@ -78,9 +176,10 @@ pauseStyle.textContent = `
 
         text-align: center;
 
-        background: rgba(20, 20, 20, 0.95);
+        background:
+            rgba(20, 20, 20, 0.95);
 
-        border: 2px solid #ffffff;
+        border: 2px solid white;
 
         padding: 40px 60px;
 
@@ -132,7 +231,7 @@ pauseStyle.textContent = `
 
     #pauseHint {
 
-        color: #aaaaaa;
+        color: #aaa;
 
         font-size: 13px;
 
@@ -142,11 +241,15 @@ pauseStyle.textContent = `
 
 `;
 
-document.head.appendChild(pauseStyle);
+document.head.appendChild(
+    pauseStyle
+);
 
 
 const resumeButton =
-    document.getElementById("resumeButton");
+    document.getElementById(
+        "resumeButton"
+    );
 
 
 // ============================================================
@@ -161,13 +264,16 @@ let isGameOver = false;
 
 
 // ============================================================
-// THREE.JS 기본 설정
+// THREE.JS
 // ============================================================
 
-const scene = new THREE.Scene();
+const scene =
+    new THREE.Scene();
 
 scene.background =
-    new THREE.Color(0x080808);
+    new THREE.Color(
+        0x080808
+    );
 
 scene.fog =
     new THREE.Fog(
@@ -298,7 +404,7 @@ const walls = [];
 
 
 // ============================================================
-// 벽 생성
+// WALL
 // ============================================================
 
 function createWall(
@@ -331,11 +437,12 @@ function createWall(
     walls.push(
         wall
     );
+
 }
 
 
 // ============================================================
-// 던전 구조
+// DUNGEON STRUCTURE
 // ============================================================
 
 // 외벽
@@ -437,19 +544,27 @@ const player = {
 
     rotationY: 0,
 
-    rotationX: 0
+    rotationX: 0,
+
+    damage: 10,
+
+    fireRate: 0.15,
+
+    fireCooldown: 0
 
 };
 
 
 // ============================================================
-// KEY INPUT
+// INPUT
 // ============================================================
 
 const keys = {};
 
 
-// 키 누름
+// ============================================================
+// KEY DOWN
+// ============================================================
 
 window.addEventListener(
     "keydown",
@@ -458,15 +573,11 @@ window.addEventListener(
         keys[event.code] = true;
 
 
-        // ----------------------------------------------------
         // ESC
-        // ----------------------------------------------------
 
         if (
             event.code === "Escape"
         ) {
-
-            // 게임이 시작되지 않았다면 무시
 
             if (
                 !gameStarted
@@ -477,8 +588,6 @@ window.addEventListener(
             }
 
 
-            // 게임 오버 상태라면 무시
-
             if (
                 isGameOver
             ) {
@@ -488,9 +597,6 @@ window.addEventListener(
             }
 
 
-            // 현재 게임 중이면
-            // Pointer Lock 해제 → Pause
-
             if (
                 !isPaused
             ) {
@@ -499,21 +605,13 @@ window.addEventListener(
 
             }
 
-            // 현재 Pause라면
-            // ESC를 다시 눌러도 자동으로 게임을 시작하지 않음
-
-            // 반드시 "계속하기" 버튼을 클릭해서
-            // 브라우저가 허용하는 사용자 입력으로
-            // Pointer Lock을 다시 획득한다.
 
             return;
 
         }
 
 
-        // ----------------------------------------------------
-        // R = RELOAD
-        // ----------------------------------------------------
+        // R
 
         if (
             event.code === "KeyR"
@@ -535,7 +633,9 @@ window.addEventListener(
 );
 
 
-// 키 뗌
+// ============================================================
+// KEY UP
+// ============================================================
 
 window.addEventListener(
     "keyup",
@@ -550,8 +650,6 @@ window.addEventListener(
 // ============================================================
 // POINTER LOCK
 // ============================================================
-
-// 게임 시작 버튼
 
 startButton.addEventListener(
     "click",
@@ -580,7 +678,9 @@ startButton.addEventListener(
             "none";
 
 
-        // Pointer Lock 요청
+        crosshair.style.display =
+            "block";
+
 
         requestGamePointerLock();
 
@@ -589,7 +689,7 @@ startButton.addEventListener(
 
 
 // ============================================================
-// Pointer Lock 요청 함수
+// REQUEST POINTER LOCK
 // ============================================================
 
 function requestGamePointerLock() {
@@ -609,7 +709,7 @@ function requestGamePointerLock() {
 
 
 // ============================================================
-// Pointer Lock 상태 확인
+// POINTER LOCK CHANGE
 // ============================================================
 
 document.addEventListener(
@@ -636,9 +736,6 @@ document.addEventListener(
             );
 
 
-            // Pointer Lock을 얻었다면
-            // Pause 상태 해제
-
             if (
                 gameStarted &&
                 !isGameOver
@@ -649,6 +746,9 @@ document.addEventListener(
                 pauseScreen.style.display =
                     "none";
 
+                crosshair.style.display =
+                    "block";
+
             }
 
         }
@@ -658,8 +758,6 @@ document.addEventListener(
                 "Pointer Lock이 해제되었습니다."
             );
 
-
-            // 게임 중 ESC 등으로 Pointer Lock이 풀렸다면
 
             if (
                 gameStarted &&
@@ -678,7 +776,7 @@ document.addEventListener(
 
 
 // ============================================================
-// Pointer Lock 오류
+// POINTER LOCK ERROR
 // ============================================================
 
 document.addEventListener(
@@ -694,7 +792,7 @@ document.addEventListener(
 
 
 // ============================================================
-// PAUSE GAME
+// PAUSE
 // ============================================================
 
 function pauseGame() {
@@ -712,7 +810,12 @@ function pauseGame() {
     isPaused = true;
 
 
-    // Pointer Lock 해제
+    pauseScreen.style.display =
+        "flex";
+
+    crosshair.style.display =
+        "none";
+
 
     if (
         document.pointerLockElement ===
@@ -722,12 +825,6 @@ function pauseGame() {
         document.exitPointerLock();
 
     }
-
-
-    // Pause 화면
-
-    pauseScreen.style.display =
-        "flex";
 
 }
 
@@ -744,6 +841,9 @@ function pauseGameUI() {
     pauseScreen.style.display =
         "flex";
 
+    crosshair.style.display =
+        "none";
+
 }
 
 
@@ -754,8 +854,6 @@ function pauseGameUI() {
 resumeButton.addEventListener(
     "click",
     event => {
-
-        // 버튼 클릭이 canvas로 전달되는 것을 방지
 
         event.stopPropagation();
 
@@ -774,8 +872,6 @@ resumeButton.addEventListener(
         );
 
 
-        // Pointer Lock 다시 요청
-
         requestGamePointerLock();
 
     }
@@ -790,29 +886,16 @@ document.addEventListener(
     "mousemove",
     event => {
 
-        // 게임이 시작되지 않았으면 무시
-
         if (
-            !gameStarted
+            !gameStarted ||
+            isPaused ||
+            isGameOver
         ) {
 
             return;
 
         }
 
-
-        // Pause 상태면 무시
-
-        if (
-            isPaused
-        ) {
-
-            return;
-
-        }
-
-
-        // Pointer Lock이 아니면 무시
 
         if (
             document.pointerLockElement !==
@@ -828,21 +911,15 @@ document.addEventListener(
             0.002;
 
 
-        // 좌우 회전
-
         player.rotationY -=
             event.movementX *
             sensitivity;
 
 
-        // 위아래 회전
-
         player.rotationX -=
             event.movementY *
             sensitivity;
 
-
-        // 위아래 회전 제한
 
         player.rotationX =
             THREE.MathUtils.clamp(
@@ -851,8 +928,6 @@ document.addEventListener(
                 Math.PI / 2
             );
 
-
-        // FPS 카메라 회전
 
         camera.rotation.order =
             "YXZ";
@@ -943,8 +1018,6 @@ function updatePlayer(
     delta
 ) {
 
-    // Pause 중이면 움직이지 않음
-
     if (
         isPaused ||
         isGameOver
@@ -969,8 +1042,6 @@ function updatePlayer(
     direction.normalize();
 
 
-    // 오른쪽 방향
-
     const right =
         new THREE.Vector3();
 
@@ -992,8 +1063,6 @@ function updatePlayer(
         new THREE.Vector3();
 
 
-    // W
-
     if (
         keys["KeyW"]
     ) {
@@ -1004,8 +1073,6 @@ function updatePlayer(
 
     }
 
-
-    // S
 
     if (
         keys["KeyS"]
@@ -1018,8 +1085,6 @@ function updatePlayer(
     }
 
 
-    // D
-
     if (
         keys["KeyD"]
     ) {
@@ -1031,8 +1096,6 @@ function updatePlayer(
     }
 
 
-    // A
-
     if (
         keys["KeyA"]
     ) {
@@ -1043,8 +1106,6 @@ function updatePlayer(
 
     }
 
-
-    // 이동
 
     if (
         movement.lengthSq() > 0
@@ -1068,8 +1129,6 @@ function updatePlayer(
         );
 
 
-        // 벽 충돌
-
         if (
             !checkCollision(
                 newPosition
@@ -1085,11 +1144,21 @@ function updatePlayer(
     }
 
 
-    // 손전등 위치
-
     flashlight.position.copy(
         camera.position
     );
+
+
+    // 발사 쿨다운
+
+    if (
+        player.fireCooldown > 0
+    ) {
+
+        player.fireCooldown -=
+            delta;
+
+    }
 
 }
 
@@ -1134,9 +1203,13 @@ function createEnemy(
 
         hp: 30,
 
+        maxHp: 30,
+
         speed: 1.2,
 
-        attackTimer: 0
+        attackTimer: 0,
+
+        hitTimer: 0
 
     };
 
@@ -1191,8 +1264,6 @@ function updateEnemies(
     delta
 ) {
 
-    // Pause 중이면 적도 멈춤
-
     if (
         isPaused ||
         isGameOver
@@ -1228,7 +1299,7 @@ function updateEnemies(
             direction.length();
 
 
-        // 플레이어 추적
+        // 추적
 
         if (
             distance > 1.7
@@ -1267,6 +1338,7 @@ function updateEnemies(
 
         }
 
+
         // 공격
 
         else {
@@ -1302,6 +1374,29 @@ function updateEnemies(
         }
 
 
+        // 피격 효과 복구
+
+        if (
+            enemy.userData.hitTimer > 0
+        ) {
+
+            enemy.userData.hitTimer -=
+                delta;
+
+
+            if (
+                enemy.userData.hitTimer <= 0
+            ) {
+
+                enemy.material.color.set(
+                    0x8b0000
+                );
+
+            }
+
+        }
+
+
         // 플레이어 바라보기
 
         enemy.lookAt(
@@ -1327,10 +1422,8 @@ window.addEventListener(
     "mousedown",
     event => {
 
-        // 게임이 시작되지 않았으면 무시
-
         if (
-            !gameStarted
+            event.button !== 0
         ) {
 
             return;
@@ -1338,20 +1431,9 @@ window.addEventListener(
         }
 
 
-        // Pause 중이면 무시
-
         if (
-            isPaused
-        ) {
-
-            return;
-
-        }
-
-
-        // 게임 오버면 무시
-
-        if (
+            !gameStarted ||
+            isPaused ||
             isGameOver
         ) {
 
@@ -1360,22 +1442,9 @@ window.addEventListener(
         }
 
 
-        // Pointer Lock이 아니면 발사하지 않음
-
         if (
             document.pointerLockElement !==
             renderer.domElement
-        ) {
-
-            return;
-
-        }
-
-
-        // 좌클릭
-
-        if (
-            event.button !== 0
         ) {
 
             return;
@@ -1395,6 +1464,17 @@ window.addEventListener(
 
 function shoot() {
 
+    // 발사 속도 제한
+
+    if (
+        player.fireCooldown > 0
+    ) {
+
+        return;
+
+    }
+
+
     // 탄약 없음
 
     if (
@@ -1410,9 +1490,22 @@ function shoot() {
     }
 
 
+    // 발사 쿨다운
+
+    player.fireCooldown =
+        player.fireRate;
+
+
+    // 탄약 감소
+
     player.ammo--;
 
     updateHUD();
+
+
+    // 총 발사 효과
+
+    createMuzzleFlash();
 
 
     // 화면 중앙에서 레이 발사
@@ -1428,86 +1521,189 @@ function shoot() {
 
     const hits =
         raycaster.intersectObjects(
-            enemies
+            enemies,
+            false
         );
 
 
     // 적을 맞혔는지 확인
 
     if (
-        hits.length > 0
+        hits.length === 0
     ) {
 
-        const enemy =
-            hits[0].object;
+        showMessage(
+            "MISS"
+        );
+
+        return;
+
+    }
 
 
-        enemy.userData.hp -=
-            10;
+    const enemy =
+        hits[0].object;
 
 
-        // 피격 효과
+    // 데미지
 
-        enemy.material.color.set(
-            0xffffff
+    enemy.userData.hp -=
+        player.damage;
+
+
+    // 피격 효과
+
+    enemy.material.color.set(
+        0xffffff
+    );
+
+    enemy.userData.hitTimer =
+        0.08;
+
+
+    // 명중 효과
+
+    showHitMarker();
+
+
+    // 적 HP 표시
+
+    showMessage(
+        "HIT - " +
+        Math.max(
+            0,
+            enemy.userData.hp
+        ) +
+        " HP"
+    );
+
+
+    // 적 처치
+
+    if (
+        enemy.userData.hp <= 0
+    ) {
+
+        killEnemy(
+            enemy
+        );
+
+    }
+
+}
+
+
+// ============================================================
+// MUZZLE FLASH
+// ============================================================
+
+function createMuzzleFlash() {
+
+    const flash =
+        new THREE.PointLight(
+            0xffaa44,
+            8,
+            4
         );
 
 
-        setTimeout(
-            () => {
-
-                if (
-                    enemy.parent
-                ) {
-
-                    enemy.material.color.set(
-                        0x8b0000
-                    );
-
-                }
-
-            },
-            80
-        );
+    flash.position.copy(
+        camera.position
+    );
 
 
-        // 적 처치
+    scene.add(
+        flash
+    );
 
-        if (
-            enemy.userData.hp <= 0
-        ) {
+
+    setTimeout(
+        () => {
 
             scene.remove(
-                enemy
+                flash
             );
 
+        },
+        45
+    );
 
-            const index =
-                enemies.indexOf(
-                    enemy
-                );
-
-
-            if (
-                index !== -1
-            ) {
-
-                enemies.splice(
-                    index,
-                    1
-                );
-
-            }
+}
 
 
-            updateEnemyCount();
+// ============================================================
+// HIT MARKER
+// ============================================================
+
+function showHitMarker() {
+
+    crosshair.classList.add(
+        "hit"
+    );
 
 
-            showMessage(
-                "ENEMY DOWN"
+    setTimeout(
+        () => {
+
+            crosshair.classList.remove(
+                "hit"
             );
 
-        }
+        },
+        80
+    );
+
+}
+
+
+// ============================================================
+// KILL ENEMY
+// ============================================================
+
+function killEnemy(
+    enemy
+) {
+
+    scene.remove(
+        enemy
+    );
+
+
+    const index =
+        enemies.indexOf(
+            enemy
+        );
+
+
+    if (
+        index !== -1
+    ) {
+
+        enemies.splice(
+            index,
+            1
+        );
+
+    }
+
+
+    updateEnemyCount();
+
+
+    showMessage(
+        "ENEMY DOWN"
+    );
+
+
+    // 모든 적 처치
+
+    if (
+        enemies.length === 0
+    ) {
+
+        showMessage(
+            "ALL ENEMIES DOWN!"
+        );
 
     }
 
@@ -1603,7 +1799,7 @@ function showMessage(
                     "";
 
             },
-            1000
+            700
         );
 
 }
@@ -1625,6 +1821,10 @@ function endGame() {
 
 
     pauseScreen.style.display =
+        "none";
+
+
+    crosshair.style.display =
         "none";
 
 
@@ -1701,7 +1901,7 @@ function animate() {
 
 
 // ============================================================
-// GAME START
+// INITIALIZE
 // ============================================================
 
 updateHUD();
