@@ -1,55 +1,18 @@
-
 import * as THREE from "three";
 
-// ==========================================
-// 1. 게임 설정
-// ==========================================
+// ========================================
+// 1. 기본 설정
+// ========================================
 
-// 맵 편집: 1 = 벽, 0 = 통로
-const MAP = [
-    "111111111111111",
-    "100000000000001",
-    "101110010111101",
-    "100000010000001",
-    "100110000011001",
-    "100010110000001",
-    "100000000010001",
-    "101100011000001",
-    "100000000000001",
-    "111111111111111"
-];
-
-const TILE = 3;
-const MAG = 12;
-
-const RELOAD_SECONDS = 1.25;
-const SPEED = 5.2;
-const TURN = 2.0;
-const RADIUS = 0.34;
-
-const SPAWNS = [
-    [-15, -9],
-    [12, -9],
-    [-9, 3],
-    [9, 6],
-    [0, 10],
-    [15, 0]
-];
-
-// ==========================================
-// 2. 기본 장면 설정
-// ==========================================
-
-const $ = s => document.querySelector(s);
+const container = document.getElementById("game-container");
 
 const scene = new THREE.Scene();
-
-scene.background = new THREE.Color(0x080c13);
-scene.fog = new THREE.Fog(0x080c13, 10, 42);
+scene.background = new THREE.Color(0x111111);
+scene.fog = new THREE.Fog(0x111111, 10, 48);
 
 const camera = new THREE.PerspectiveCamera(
-    76,
-    innerWidth / innerHeight,
+    75,
+    window.innerWidth / window.innerHeight,
     0.1,
     100
 );
@@ -60,146 +23,74 @@ const renderer = new THREE.WebGLRenderer({
     antialias: true
 });
 
-renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-renderer.setSize(innerWidth, innerHeight);
-
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.shadowMap.enabled = true;
-renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
-$("#game").appendChild(renderer.domElement);
+container.appendChild(renderer.domElement);
 
-// ==========================================
-// 3. 조명
-// ==========================================
+const clock = new THREE.Clock();
 
-scene.add(
-    new THREE.HemisphereLight(
-        0x9bbde0,
-        0x17121a,
-        1.25
-    )
-);
 
-const sun = new THREE.DirectionalLight(
-    0xffdfb0,
-    1.35
-);
+// ========================================
+// 2. 게임 설정
+// ========================================
 
-sun.position.set(-8, 15, 8);
-sun.castShadow = true;
-sun.shadow.mapSize.set(1024, 1024);
+const CELL = 4;
 
-scene.add(sun);
+const MAG = 12;
+const RELOAD_TIME = 1.5;
 
-// ==========================================
-// 4. 바닥
-// ==========================================
+const MOVE_SPEED = 5;
+const TURN_SPEED = 2.2;
 
-const floor = new THREE.Mesh(
-    new THREE.PlaneGeometry(45, 30),
-    new THREE.MeshStandardMaterial({
-        color: 0x30343b,
-        roughness: 0.95
-    })
-);
+const PLAYER_RADIUS = 0.35;
 
-floor.rotation.x = -Math.PI / 2;
-floor.receiveShadow = true;
+const MAP = [
+    "11111111111",
+    "10000000001",
+    "10111011001",
+    "10001000001",
+    "11101011101",
+    "10000010001",
+    "10111010001",
+    "10001000001",
+    "10101110101",
+    "10000000001",
+    "11111111111"
+];
 
-scene.add(floor);
+const MAP_HEIGHT = MAP.length;
+const MAP_WIDTH = MAP[0].length;
 
-// ==========================================
-// 5. 벽 생성
-// ==========================================
+const enemies = [];
+const walls = [];
+const enemyMeshes = [];
 
-const wallMeshes = [];
+let running = false;
+let gameEnded = false;
+let paused = false;
 
-const wallMat = new THREE.MeshStandardMaterial({
-    color: 0x555d68,
-    roughness: 0.88,
-    metalness: 0.12
-});
+let elapsedTime = 0;
+let reloadTimer = 0;
 
-function tilePos(x, z) {
-    return {
-        x: (x - MAP[0].length / 2 + 0.5) * TILE,
-        z: (z - MAP.length / 2 + 0.5) * TILE
-    };
-}
+const keys = {};
 
-function wallAt(x, z) {
-    const gx = Math.floor(
-        x / TILE + MAP[0].length / 2
-    );
+const raycaster = new THREE.Raycaster();
 
-    const gz = Math.floor(
-        z / TILE + MAP.length / 2
-    );
 
-    return (
-        gz < 0 ||
-        gz >= MAP.length ||
-        gx < 0 ||
-        gx >= MAP[0].length ||
-        MAP[gz][gx] === "1"
-    );
-}
-
-for (let z = 0; z < MAP.length; z++) {
-    for (let x = 0; x < MAP[z].length; x++) {
-
-        if (MAP[z][x] !== "1") continue;
-
-        const p = tilePos(x, z);
-
-        const wall = new THREE.Mesh(
-            new THREE.BoxGeometry(
-                TILE,
-                3.2,
-                TILE
-            ),
-            wallMat
-        );
-
-        wall.position.set(
-            p.x,
-            1.6,
-            p.z
-        );
-
-        wall.castShadow = true;
-        wall.receiveShadow = true;
-
-        scene.add(wall);
-        wallMeshes.push(wall);
-    }
-}
-
-// 천장
-const ceiling = new THREE.Mesh(
-    new THREE.PlaneGeometry(45, 30),
-    new THREE.MeshStandardMaterial({
-        color: 0x111720,
-        side: THREE.DoubleSide
-    })
-);
-
-ceiling.rotation.x = Math.PI / 2;
-ceiling.position.y = 3.2;
-
-scene.add(ceiling);
-
-// ==========================================
-// 6. 플레이어
-// ==========================================
+// ========================================
+// 3. 플레이어 설정
+// ========================================
 
 const player = {
-    x: -18,
-    z: -10.5,
-    y: 1.62,
+    x: -16,
+    z: -16,
+    y: 1.6,
 
-    yaw: 0,
-    pitch: 0,
+    // 시작할 때 열린 통로 방향을 바라보게 설정
+    yaw: Math.PI,
 
     hp: 100,
 
@@ -207,9 +98,7 @@ const player = {
     reserve: 60,
 
     reloading: false,
-    reloadEnd: 0,
-
-    shotAt: 0,
+    shotCooldown: 0,
 
     alive: true
 };
@@ -220,225 +109,740 @@ camera.position.set(
     player.z
 );
 
-// ==========================================
-// 7. 총 모델
-// ==========================================
+camera.rotation.y = player.yaw;
+camera.rotation.x = 0;
 
-const weapon = new THREE.Group();
 
-function weaponPart(geometry, material, position) {
-    const mesh = new THREE.Mesh(
-        geometry,
-        material
-    );
+// ========================================
+// 4. 조명
+// ========================================
 
-    mesh.position.set(...position);
-    weapon.add(mesh);
-}
-
-weaponPart(
-    new THREE.BoxGeometry(0.18, 0.16, 0.55),
-    new THREE.MeshStandardMaterial({
-        color: 0x252d38,
-        metalness: 0.7
-    }),
-    [0.34, -0.29, -0.58]
+const ambientLight = new THREE.AmbientLight(
+    0xffffff,
+    0.35
 );
 
-const barrel = new THREE.Mesh(
-    new THREE.CylinderGeometry(
-        0.035,
-        0.045,
-        0.32,
-        10
-    ),
-    new THREE.MeshStandardMaterial({
-        color: 0x778694,
-        metalness: 0.8
-    })
+scene.add(ambientLight);
+
+const mainLight = new THREE.PointLight(
+    0xffd19a,
+    1.5,
+    35
 );
 
-barrel.rotation.x = Math.PI / 2;
-barrel.position.set(0.34, -0.25, -0.91);
+mainLight.position.set(0, 7, 0);
+scene.add(mainLight);
 
-weapon.add(barrel);
-
-weaponPart(
-    new THREE.BoxGeometry(0.12, 0.22, 0.14),
-    new THREE.MeshStandardMaterial({
-        color: 0x111820
-    }),
-    [0.34, -0.43, -0.48]
+const playerLight = new THREE.PointLight(
+    0xffd6a0,
+    0.8,
+    14
 );
 
-camera.add(weapon);
+playerLight.position.set(0, 1.5, 0);
+camera.add(playerLight);
 scene.add(camera);
 
-// ==========================================
-// 8. 적 생성
-// ==========================================
 
-const enemies = [];
+// ========================================
+// 5. 바닥과 천장
+// ========================================
 
-const enemyGeo = new THREE.IcosahedronGeometry(
-    0.62,
-    1
+const floorGeometry = new THREE.PlaneGeometry(
+    MAP_WIDTH * CELL,
+    MAP_HEIGHT * CELL
 );
 
-function spawnEnemy(x, z) {
+const floorMaterial = new THREE.MeshStandardMaterial({
+    color: 0x383838,
+    roughness: 1
+});
 
-    if (wallAt(x, z)) return;
+const floor = new THREE.Mesh(
+    floorGeometry,
+    floorMaterial
+);
+
+floor.rotation.x = -Math.PI / 2;
+floor.position.y = 0;
+floor.receiveShadow = true;
+
+scene.add(floor);
+
+
+const ceilingGeometry = new THREE.PlaneGeometry(
+    MAP_WIDTH * CELL,
+    MAP_HEIGHT * CELL
+);
+
+const ceilingMaterial = new THREE.MeshStandardMaterial({
+    color: 0x202020,
+    side: THREE.DoubleSide
+});
+
+const ceiling = new THREE.Mesh(
+    ceilingGeometry,
+    ceilingMaterial
+);
+
+ceiling.rotation.x = Math.PI / 2;
+ceiling.position.y = 4;
+scene.add(ceiling);
+
+
+// ========================================
+// 6. 던전 벽 생성
+// ========================================
+
+const wallGeometry = new THREE.BoxGeometry(
+    CELL,
+    4,
+    CELL
+);
+
+const wallMaterials = [
+    new THREE.MeshStandardMaterial({ color: 0x55505a }),
+    new THREE.MeshStandardMaterial({ color: 0x62594e }),
+    new THREE.MeshStandardMaterial({ color: 0x494949 })
+];
+
+function gridToWorld(col, row) {
+    return {
+        x: (col - (MAP_WIDTH - 1) / 2) * CELL,
+        z: (row - (MAP_HEIGHT - 1) / 2) * CELL
+    };
+}
+
+function createWalls() {
+
+    for (let row = 0; row < MAP_HEIGHT; row++) {
+
+        for (let col = 0; col < MAP_WIDTH; col++) {
+
+            if (MAP[row][col] !== "1") {
+                continue;
+            }
+
+            const position = gridToWorld(col, row);
+
+            const material = wallMaterials[
+                (row + col) % wallMaterials.length
+            ];
+
+            const wall = new THREE.Mesh(
+                wallGeometry,
+                material
+            );
+
+            wall.position.set(
+                position.x,
+                2,
+                position.z
+            );
+
+            wall.castShadow = true;
+            wall.receiveShadow = true;
+
+            scene.add(wall);
+            walls.push(wall);
+        }
+    }
+}
+
+createWalls();
+
+
+// ========================================
+// 7. 충돌 검사
+// ========================================
+
+function isWall(x, z) {
+
+    const col = Math.floor(x / CELL + MAP_WIDTH / 2);
+    const row = Math.floor(z / CELL + MAP_HEIGHT / 2);
+
+    if (
+        row < 0 ||
+        row >= MAP_HEIGHT ||
+        col < 0 ||
+        col >= MAP_WIDTH
+    ) {
+        return true;
+    }
+
+    return MAP[row][col] === "1";
+}
+
+function canMoveTo(x, z) {
+
+    const r = PLAYER_RADIUS;
+
+    return (
+        !isWall(x - r, z - r) &&
+        !isWall(x + r, z - r) &&
+        !isWall(x - r, z + r) &&
+        !isWall(x + r, z + r)
+    );
+}
+
+
+// ========================================
+// 8. 적 생성
+// ========================================
+
+const enemyPositions = [
+    { x: -4, z: -8 },
+    { x: 4, z: -4 },
+    { x: 12, z: 0 },
+    { x: -8, z: 8 },
+    { x: 8, z: 12 }
+];
+
+function createEnemy(x, z) {
 
     const group = new THREE.Group();
 
-    const core = new THREE.Mesh(
-        enemyGeo,
+    const bodyMaterial = new THREE.MeshStandardMaterial({
+        color: 0x9c2929,
+        roughness: 0.8
+    });
+
+    const body = new THREE.Mesh(
+        new THREE.BoxGeometry(0.9, 1.3, 0.65),
+        bodyMaterial
+    );
+
+    body.position.y = 0.9;
+    body.castShadow = true;
+
+    const head = new THREE.Mesh(
+        new THREE.SphereGeometry(0.35, 12, 12),
         new THREE.MeshStandardMaterial({
-            color: 0xb94d55,
-            emissive: 0x3b080d,
-            metalness: 0.35
+            color: 0x553333
         })
     );
 
-    core.castShadow = true;
-    group.add(core);
+    head.position.y = 1.75;
+    head.castShadow = true;
 
-    const eye = new THREE.Mesh(
-        new THREE.SphereGeometry(0.12, 12, 8),
-        new THREE.MeshBasicMaterial({
-            color: 0xffd5a3
-        })
+    const eyeMaterial = new THREE.MeshBasicMaterial({
+        color: 0xff2222
+    });
+
+    const leftEye = new THREE.Mesh(
+        new THREE.SphereGeometry(0.06, 8, 8),
+        eyeMaterial
     );
 
-    eye.position.set(0, 0.08, -0.55);
-    group.add(eye);
+    const rightEye = leftEye.clone();
 
-    const ring = new THREE.Mesh(
-        new THREE.TorusGeometry(
-            0.72,
-            0.045,
-            8,
-            24
-        ),
-        new THREE.MeshStandardMaterial({
-            color: 0x8dabbc,
-            metalness: 0.8
-        })
-    );
+    leftEye.position.set(-0.13, 1.8, -0.31);
+    rightEye.position.set(0.13, 1.8, -0.31);
 
-    ring.rotation.x = Math.PI / 2;
-    group.add(ring);
+    group.add(body, head, leftEye, rightEye);
 
-    group.position.set(x, 1.15, z);
+    group.position.set(x, 0, z);
 
     scene.add(group);
 
-    enemies.push({
-        mesh: group,
-        hp: 3,
-        attack: 0,
-        alive: true,
-        phase: Math.random() * 6
-    });
+    body.userData.enemy = null;
+    head.userData.enemy = null;
+
+    const enemy = {
+        group,
+        body,
+        head,
+
+        hp: 100,
+        speed: 1.4,
+
+        attackCooldown: 0,
+        alive: true
+    };
+
+    body.userData.enemy = enemy;
+    head.userData.enemy = enemy;
+
+    enemies.push(enemy);
+    enemyMeshes.push(body, head);
 }
 
-SPAWNS.forEach(p => spawnEnemy(...p));
+enemyPositions.forEach(position => {
+    createEnemy(position.x, position.z);
+});
 
-// ==========================================
-// 9. HUD
-// ==========================================
 
-function hud() {
-    $("#hp").textContent = Math.max(
-        0,
-        Math.ceil(player.hp)
-    );
+// ========================================
+// 9. 출구 생성
+// ========================================
 
-    $("#ammo").textContent =
+const exitPosition = gridToWorld(9, 9);
+
+const exitGroup = new THREE.Group();
+
+const exitFrame = new THREE.Mesh(
+    new THREE.BoxGeometry(2.5, 3, 0.3),
+    new THREE.MeshStandardMaterial({
+        color: 0x66502a
+    })
+);
+
+exitFrame.position.y = 1.5;
+
+const exitLight = new THREE.Mesh(
+    new THREE.PlaneGeometry(1.8, 2.5),
+    new THREE.MeshBasicMaterial({
+        color: 0x00ccff,
+        transparent: true,
+        opacity: 0.7,
+        side: THREE.DoubleSide
+    })
+);
+
+exitLight.position.set(0, 1.5, 0.2);
+
+exitGroup.add(exitFrame, exitLight);
+
+exitGroup.position.set(
+    exitPosition.x,
+    0,
+    exitPosition.z
+);
+
+scene.add(exitGroup);
+
+
+// ========================================
+// 10. 무기 모델
+// ========================================
+
+const weapon = new THREE.Group();
+
+const weaponBody = new THREE.Mesh(
+    new THREE.BoxGeometry(0.25, 0.22, 0.8),
+    new THREE.MeshStandardMaterial({
+        color: 0x292929,
+        metalness: 0.6,
+        roughness: 0.4
+    })
+);
+
+weaponBody.position.set(0, 0, -0.3);
+
+const weaponHandle = new THREE.Mesh(
+    new THREE.BoxGeometry(0.18, 0.35, 0.2),
+    new THREE.MeshStandardMaterial({
+        color: 0x555555
+    })
+);
+
+weaponHandle.position.set(0, -0.23, -0.1);
+
+weapon.add(weaponBody, weaponHandle);
+
+weapon.position.set(0.35, -0.3, -0.65);
+
+camera.add(weapon);
+
+
+// ========================================
+// 11. HUD 업데이트
+// ========================================
+
+const healthElement = document.getElementById("health");
+const ammoElement = document.getElementById("ammo");
+const enemyCountElement = document.getElementById("enemy-count");
+const messageElement = document.getElementById("message");
+
+function updateHUD() {
+
+    healthElement.textContent = player.hp;
+
+    ammoElement.textContent =
         `${player.ammo} / ${player.reserve}`;
 
-    $("#left").textContent =
-        enemies.filter(e => e.alive).length;
+    enemyCountElement.textContent =
+        enemies.filter(enemy => enemy.alive).length;
 }
 
-hud();
+function showMessage(text, duration = 1.2) {
 
-// ==========================================
-// 10. 게임 상태
-// ==========================================
+    messageElement.textContent = text;
 
-let running = false;
-let ended = false;
-let msgTime = 0;
+    messageElement.style.opacity = "1";
 
-function say(text, duration = 1.5) {
-    $("#message").textContent = text;
-    $("#message").classList.remove("hidden");
+    window.clearTimeout(showMessage.timeout);
 
-    msgTime = duration;
+    showMessage.timeout = window.setTimeout(() => {
+        messageElement.style.opacity = "0";
+    }, duration * 1000);
 }
 
-function start() {
-    if (running || ended) return;
+updateHUD();
 
-    running = true;
 
-    $("#start").classList.add("hidden");
-    $("#pause").classList.add("hidden");
+// ========================================
+// 12. 시점 회전
+// ========================================
 
-    $("#hud").classList.remove("hidden");
-    $("#crosshair").classList.remove("hidden");
+function look(dt) {
 
-    say("던전을 탐험하세요!", 2);
+    // 왼쪽 화살표: 왼쪽 회전
+    if (keys.arrowleft) {
+        player.yaw += TURN_SPEED * dt;
+    }
+
+    // 오른쪽 화살표: 오른쪽 회전
+    if (keys.arrowright) {
+        player.yaw -= TURN_SPEED * dt;
+    }
+
+    // 위아래 시점 이동은 사용하지 않음
+    camera.rotation.y = player.yaw;
+    camera.rotation.x = 0;
 }
 
-function pause() {
-    if (!running) return;
+
+// ========================================
+// 13. 플레이어 이동
+// ========================================
+
+function movePlayer(dt) {
+
+    let forwardAmount = 0;
+    let sideAmount = 0;
+
+    if (keys.w) forwardAmount += 1;
+    if (keys.s) forwardAmount -= 1;
+
+    if (keys.d) sideAmount += 1;
+    if (keys.a) sideAmount -= 1;
+
+    if (forwardAmount === 0 && sideAmount === 0) {
+        return;
+    }
+
+    const forward = new THREE.Vector3(
+        -Math.sin(player.yaw),
+        0,
+        -Math.cos(player.yaw)
+    );
+
+    const right = new THREE.Vector3(
+        Math.cos(player.yaw),
+        0,
+        -Math.sin(player.yaw)
+    );
+
+    const movement = new THREE.Vector3();
+
+    movement.addScaledVector(forward, forwardAmount);
+    movement.addScaledVector(right, sideAmount);
+
+    movement.normalize();
+    movement.multiplyScalar(MOVE_SPEED * dt);
+
+    const nextX = player.x + movement.x;
+    const nextZ = player.z + movement.z;
+
+    // X축과 Z축을 따로 검사하여 벽에 부딪혀도
+    // 가능한 방향으로 이동할 수 있게 함
+    if (canMoveTo(nextX, player.z)) {
+        player.x = nextX;
+    }
+
+    if (canMoveTo(player.x, nextZ)) {
+        player.z = nextZ;
+    }
+
+    camera.position.set(
+        player.x,
+        player.y,
+        player.z
+    );
+}
+
+
+// ========================================
+// 14. 적 AI
+// ========================================
+
+function updateEnemies(dt) {
+
+    for (const enemy of enemies) {
+
+        if (!enemy.alive) continue;
+
+        enemy.attackCooldown -= dt;
+
+        const dx = player.x - enemy.group.position.x;
+        const dz = player.z - enemy.group.position.z;
+
+        const distance = Math.sqrt(dx * dx + dz * dz);
+
+        // 플레이어를 바라보게 설정
+        enemy.group.rotation.y = Math.atan2(dx, dz);
+
+        // 가까워지면 플레이어를 추적
+        if (distance > 1.5 && distance < 18) {
+
+            const moveX =
+                (dx / distance) * enemy.speed * dt;
+
+            const moveZ =
+                (dz / distance) * enemy.speed * dt;
+
+            const nextX = enemy.group.position.x + moveX;
+            const nextZ = enemy.group.position.z + moveZ;
+
+            if (!isWall(nextX, enemy.group.position.z)) {
+                enemy.group.position.x = nextX;
+            }
+
+            if (!isWall(enemy.group.position.x, nextZ)) {
+                enemy.group.position.z = nextZ;
+            }
+        }
+
+        // 플레이어에게 가까이 왔을 때 공격
+        if (
+            distance < 1.6 &&
+            enemy.attackCooldown <= 0
+        ) {
+
+            player.hp -= 10;
+
+            enemy.attackCooldown = 1.2;
+
+            showMessage("YOU ARE UNDER ATTACK!");
+
+            updateHUD();
+
+            if (player.hp <= 0) {
+                player.hp = 0;
+                updateHUD();
+                endGame(false);
+            }
+        }
+    }
+}
+
+
+// ========================================
+// 15. 총 발사
+// ========================================
+
+function shoot() {
+
+    if (!running || paused || gameEnded) return;
+
+    if (player.reloading) {
+        showMessage("RELOADING!");
+        return;
+    }
+
+    if (player.shotCooldown > 0) return;
+
+    if (player.ammo <= 0) {
+        showMessage("OUT OF AMMO!");
+        return;
+    }
+
+    player.ammo--;
+
+    player.shotCooldown = 0.25;
+
+    // 무기 반동
+    weapon.position.z = -0.5;
+
+    window.setTimeout(() => {
+        weapon.position.z = -0.65;
+    }, 80);
+
+    // 카메라 중앙에서 정면으로 발사
+    camera.updateMatrixWorld(true);
+
+    raycaster.setFromCamera(
+        new THREE.Vector2(0, 0),
+        camera
+    );
+
+    const enemyHits = raycaster.intersectObjects(
+        enemyMeshes,
+        false
+    );
+
+    const wallHits = raycaster.intersectObjects(
+        walls,
+        false
+    );
+
+    let hitEnemy = null;
+
+    if (enemyHits.length > 0) {
+
+        const firstEnemyHit = enemyHits[0];
+
+        const nearestWall = wallHits.length > 0
+            ? wallHits[0].distance
+            : Infinity;
+
+        // 벽 뒤에 있는 적은 맞지 않도록 처리
+        if (firstEnemyHit.distance < nearestWall) {
+            hitEnemy = firstEnemyHit.object.userData.enemy;
+        }
+    }
+
+    if (hitEnemy && hitEnemy.alive) {
+
+        hitEnemy.hp -= 35;
+
+        showMessage("HIT!");
+
+        if (hitEnemy.hp <= 0) {
+
+            hitEnemy.alive = false;
+
+            scene.remove(hitEnemy.group);
+
+            showMessage("ENEMY ELIMINATED!");
+
+        }
+
+    } else {
+
+        showMessage("SHOT!");
+
+    }
+
+    updateHUD();
+
+    // 모든 적을 처치했는지 확인
+    const remaining = enemies.filter(enemy => enemy.alive).length;
+
+    if (remaining === 0) {
+        showMessage("ALL ENEMIES DEFEATED!");
+    }
+}
+
+
+// ========================================
+// 16. 재장전
+// ========================================
+
+function reload() {
+
+    if (!running || paused || gameEnded) return;
+
+    if (player.reloading) return;
+
+    if (player.ammo >= MAG) {
+        showMessage("MAGAZINE FULL!");
+        return;
+    }
+
+    if (player.reserve <= 0) {
+        showMessage("NO RESERVE AMMO!");
+        return;
+    }
+
+    player.reloading = true;
+    reloadTimer = RELOAD_TIME;
+
+    showMessage("RELOADING...");
+}
+
+function updateReload(dt) {
+
+    if (!player.reloading) return;
+
+    reloadTimer -= dt;
+
+    if (reloadTimer <= 0) {
+
+        const needed = MAG - player.ammo;
+
+        const amount = Math.min(
+            needed,
+            player.reserve
+        );
+
+        player.ammo += amount;
+        player.reserve -= amount;
+
+        player.reloading = false;
+
+        showMessage("RELOADED!");
+
+        updateHUD();
+    }
+}
+
+
+// ========================================
+// 17. 게임 승리 / 패배
+// ========================================
+
+const overlay = document.getElementById("overlay");
+
+const menuTitle = document.getElementById("menu-title");
+const menuDescription = document.getElementById("menu-description");
+
+const startButton = document.getElementById("start-button");
+const resumeButton = document.getElementById("resume-button");
+const restartButton = document.getElementById("restart-button");
+
+function endGame(victory) {
 
     running = false;
+    paused = false;
+    gameEnded = true;
 
-    $("#pause").classList.remove("hidden");
-}
+    overlay.classList.remove("hidden");
 
-function finish(win) {
-    if (ended) return;
-
-    ended = true;
-    running = false;
-
-    $("#endTitle").textContent = win
-        ? "MISSION COMPLETE"
+    menuTitle.textContent = victory
+        ? "VICTORY!"
         : "GAME OVER";
 
-    $("#endText").textContent = win
-        ? "모든 드론을 정리했습니다. 던전 정복 성공!"
-        : "체력이 모두 소진되었습니다. 다시 도전해 보세요.";
+    menuDescription.textContent = victory
+        ? "YOU ESCAPED THE DUNGEON."
+        : "YOU HAVE BEEN DEFEATED.";
 
-    $("#end").classList.remove("hidden");
-    $("#crosshair").classList.add("hidden");
+    startButton.classList.add("hidden");
+    resumeButton.classList.add("hidden");
+    restartButton.classList.remove("hidden");
 }
 
-function restart() {
-    location.reload();
-}
 
-$("#startBtn").onclick = start;
+// ========================================
+// 18. 출구 도착 검사
+// ========================================
 
-$("#resumeBtn").onclick = () => {
-    if (!ended) {
-        running = true;
-        $("#pause").classList.add("hidden");
+function checkExit() {
+
+    const dx = player.x - exitPosition.x;
+    const dz = player.z - exitPosition.z;
+
+    const distance = Math.sqrt(dx * dx + dz * dz);
+
+    if (distance < 2.2) {
+
+        const remaining = enemies.filter(
+            enemy => enemy.alive
+        ).length;
+
+        if (remaining === 0) {
+            endGame(true);
+        } else {
+            showMessage("DEFEAT ALL ENEMIES FIRST!");
+        }
     }
-};
+}
 
-$("#restartBtn").onclick = restart;
-$("#againBtn").onclick = restart;
 
-// ==========================================
-// 11. 키보드 입력
-// ==========================================
-
-const keys = {};
+// ========================================
+// 19. 키보드 입력
+// ========================================
 
 window.addEventListener("keydown", event => {
 
@@ -453,449 +857,186 @@ window.addEventListener("keydown", event => {
         event.preventDefault();
     }
 
+    // ESC: 일시정지
     if (key === "escape" && running) {
-        pause();
+        pauseGame();
     }
 
+    // R: 재장전
     if (key === "r" && running) {
         reload();
+    }
+
+    // Space: 총 발사
+    if (
+        key === " " &&
+        running &&
+        !event.repeat
+    ) {
+        shoot();
     }
 });
 
 window.addEventListener("keyup", event => {
+
     keys[event.key.toLowerCase()] = false;
 });
 
 window.addEventListener("blur", () => {
+
     Object.keys(keys).forEach(key => {
         keys[key] = false;
     });
 });
 
-// ==========================================
-// 12. 벽 충돌
-// ==========================================
 
-function canMove(x, z) {
+// ========================================
+// 20. 마우스 클릭 발사 기능 제거
+// ========================================
 
-    return ![
-        [x - RADIUS, z - RADIUS],
-        [x + RADIUS, z - RADIUS],
-        [x - RADIUS, z + RADIUS],
-        [x + RADIUS, z + RADIUS]
-    ].some(p => wallAt(...p));
-}
-
-// ==========================================
-// 13. WASD 이동
-// ==========================================
-
-function move(dt) {
-
-    let forward =
-        (keys.w ? 1 : 0) -
-        (keys.s ? 1 : 0);
-
-    let side =
-        (keys.d ? 1 : 0) -
-        (keys.a ? 1 : 0);
-
-    const length = Math.hypot(
-        forward,
-        side
-    );
-
-    if (length) {
-
-        forward /= length;
-        side /= length;
-
-        const dx = (
-            Math.sin(player.yaw) * forward +
-            Math.cos(player.yaw) * side
-        ) * SPEED * dt;
-
-        const dz = (
-            -Math.cos(player.yaw) * forward +
-            Math.sin(player.yaw) * side
-        ) * SPEED * dt;
-
-        if (canMove(player.x + dx, player.z)) {
-            player.x += dx;
-        }
-
-        if (canMove(player.x, player.z + dz)) {
-            player.z += dz;
-        }
-    }
-
-    camera.position.set(
-        player.x,
-        player.y,
-        player.z
-    );
-}
-
-// ==========================================
-// 14. 방향키 시점 조작
-// ==========================================
-
-function look(dt) {
-
-    if (keys.arrowleft) {
-        player.yaw += TURN * dt;
-    }
-
-    if (keys.arrowright) {
-        player.yaw -= TURN * dt;
-    }
-
-    if (keys.arrowup) {
-        player.pitch += TURN * dt;
-    }
-
-    if (keys.arrowdown) {
-        player.pitch -= TURN * dt;
-    }
-
-    player.pitch = THREE.MathUtils.clamp(
-        player.pitch,
-        -1.25,
-        1.25
-    );
-
-    camera.rotation.y = player.yaw;
-    camera.rotation.x = player.pitch;
-}
-
-// ==========================================
-// 15. 재장전
-// ==========================================
-
-function reload() {
-
-    if (
-        player.reloading ||
-        player.ammo === MAG ||
-        player.reserve <= 0 ||
-        !player.alive
-    ) {
-        return;
-    }
-
-    player.reloading = true;
-
-    player.reloadEnd =
-        performance.now() / 1000 +
-        RELOAD_SECONDS;
-
-    $("#reload").classList.remove("hidden");
-
-    say("재장전 중...", RELOAD_SECONDS);
-}
-
-function updateReload(now) {
-
-    if (
-        player.reloading &&
-        now >= player.reloadEnd
-    ) {
-
-        const amount = Math.min(
-            MAG - player.ammo,
-            player.reserve
-        );
-
-        player.ammo += amount;
-        player.reserve -= amount;
-
-        player.reloading = false;
-
-        $("#reload").classList.add("hidden");
-
-        say("재장전 완료!", 1);
-
-        hud();
-    }
-}
-
-// ==========================================
-// 16. 총 발사
-// ==========================================
-
-const ray = new THREE.Raycaster();
-
-const center = new THREE.Vector2(0, 0);
-
-function shoot() {
-
-    if (
-        !running ||
-        ended ||
-        player.reloading ||
-        performance.now() / 1000 < player.shotAt
-    ) {
-        return;
-    }
-
-    if (!player.ammo) {
-
-        say("탄약이 없습니다. R 키로 재장전하세요.");
-
-        player.shotAt =
-            performance.now() / 1000 + 0.25;
-
-        return;
-    }
-
-    player.ammo--;
-
-    player.shotAt =
-        performance.now() / 1000 + 0.22;
-
-    hud();
-
-    ray.setFromCamera(center, camera);
-
-    const live = enemies.filter(e => e.alive);
-
-    const hits = ray.intersectObjects(
-        [
-            ...live.map(e => e.mesh),
-            ...wallMeshes
-        ],
-        true
-    );
-
-    if (!hits.length) return;
-
-    let target = null;
-
-    for (const hit of hits) {
-
-        let object = hit.object;
-
-        while (object) {
-
-            target = live.find(
-                enemy => enemy.mesh === object
-            );
-
-            if (target) break;
-
-            object = object.parent;
-        }
-
-        if (target) break;
-
-        // 벽에 먼저 맞았다면 적은 맞지 않음
-        return;
-    }
-
-    target.hp--;
-
-    $("#crosshair").style.color = "#ffec9a";
-
-    setTimeout(() => {
-        $("#crosshair").style.color = "";
-    }, 100);
-
-    if (target.hp <= 0) {
-
-        target.alive = false;
-
-        scene.remove(target.mesh);
-
-        say("드론 제거!", 0.8);
-
-        hud();
-
-        if (enemies.every(e => !e.alive)) {
-            finish(true);
-        }
-    }
-}
-
-renderer.domElement.addEventListener(
-    "pointerdown",
-    event => {
-        if (event.button === 0) {
-            shoot();
-        }
-    }
-);
+// 마우스 클릭으로 총이 발사되지 않도록 함
+// 발사는 오직 Space 키로만 가능
 
 window.addEventListener("contextmenu", event => {
     event.preventDefault();
 });
 
-// ==========================================
-// 17. 적 AI
-// ==========================================
 
-function updateEnemies(dt, time) {
+// ========================================
+// 21. 게임 시작
+// ========================================
 
-    for (const enemy of enemies) {
+function startGame() {
 
-        if (!enemy.alive) continue;
+    running = true;
+    paused = false;
+    gameEnded = false;
 
-        const dx =
-            player.x - enemy.mesh.position.x;
+    overlay.classList.add("hidden");
 
-        const dz =
-            player.z - enemy.mesh.position.z;
+    startButton.classList.add("hidden");
+    resumeButton.classList.add("hidden");
+    restartButton.classList.add("hidden");
 
-        const distance = Math.hypot(dx, dz);
+    clock.getDelta();
 
-        enemy.mesh.position.y =
-            1.15 +
-            Math.sin(time * 2 + enemy.phase) * 0.12;
-
-        enemy.mesh.rotation.y += dt * 0.8;
-
-        enemy.mesh.children[1].lookAt(camera.position);
-
-        // 플레이어 추적
-        if (distance > 1.55 && distance < 18) {
-
-            const step = Math.min(
-                1.5 * dt,
-                distance - 1.45
-            );
-
-            const nx =
-                enemy.mesh.position.x +
-                dx / distance * step;
-
-            const nz =
-                enemy.mesh.position.z +
-                dz / distance * step;
-
-            if (!wallAt(nx, enemy.mesh.position.z)) {
-                enemy.mesh.position.x = nx;
-            }
-
-            if (!wallAt(enemy.mesh.position.x, nz)) {
-                enemy.mesh.position.z = nz;
-            }
-        }
-
-        // 플레이어 공격
-        else if (distance <= 1.65) {
-
-            enemy.attack -= dt;
-
-            if (enemy.attack <= 0) {
-
-                enemy.attack = 1.05;
-
-                player.hp -= 8;
-
-                hud();
-
-                $("#damage").style.background =
-                    "rgba(255,35,45,.22)";
-
-                setTimeout(() => {
-                    $("#damage").style.background = "";
-                }, 110);
-
-                say("드론이 가까이 접근했습니다!", 0.7);
-
-                if (player.hp <= 0) {
-
-                    player.hp = 0;
-                    player.alive = false;
-
-                    hud();
-
-                    finish(false);
-
-                    return;
-                }
-            }
-        }
-    }
+    showMessage("FIND THE EXIT!");
 }
 
-// ==========================================
-// 18. 던전 조명
-// ==========================================
+startButton.addEventListener("click", startGame);
 
-for (const [x, z] of [
-    [-18, -10],
-    [18, -10],
-    [-18, 10],
-    [18, 10],
-    [0, 12]
-]) {
 
-    const light = new THREE.PointLight(
-        0x69bfff,
-        1.1,
-        10
+// ========================================
+// 22. 일시정지
+// ========================================
+
+function pauseGame() {
+
+    if (!running || gameEnded) return;
+
+    running = false;
+    paused = true;
+
+    overlay.classList.remove("hidden");
+
+    menuTitle.textContent = "PAUSED";
+    menuDescription.textContent = "GAME IS PAUSED";
+
+    startButton.classList.add("hidden");
+    restartButton.classList.add("hidden");
+    resumeButton.classList.remove("hidden");
+}
+
+function resumeGame() {
+
+    if (!paused || gameEnded) return;
+
+    running = true;
+    paused = false;
+
+    overlay.classList.add("hidden");
+
+    clock.getDelta();
+}
+
+resumeButton.addEventListener("click", resumeGame);
+
+
+// ========================================
+// 23. 게임 재시작
+// ========================================
+
+function restartGame() {
+
+    // 페이지를 새로고침하여 모든 게임 상태 초기화
+    window.location.reload();
+}
+
+restartButton.addEventListener("click", restartGame);
+
+
+// ========================================
+// 24. 게임 업데이트
+// ========================================
+
+function update(dt) {
+
+    if (!running || gameEnded) return;
+
+    elapsedTime += dt;
+
+    player.shotCooldown = Math.max(
+        0,
+        player.shotCooldown - dt
     );
 
-    light.position.set(x, 2.5, z);
+    look(dt);
 
-    scene.add(light);
+    movePlayer(dt);
+
+    updateEnemies(dt);
+
+    updateReload(dt);
+
+    checkExit();
 }
 
-// ==========================================
-// 19. 게임 실행 루프
-// ==========================================
 
-const clock = new THREE.Clock();
+// ========================================
+// 25. 화면 크기 변경
+// ========================================
+
+window.addEventListener("resize", () => {
+
+    camera.aspect =
+        window.innerWidth / window.innerHeight;
+
+    camera.updateProjectionMatrix();
+
+    renderer.setSize(
+        window.innerWidth,
+        window.innerHeight
+    );
+
+    renderer.setPixelRatio(
+        Math.min(window.devicePixelRatio, 2)
+    );
+});
+
+
+// ========================================
+// 26. 메인 게임 루프
+// ========================================
 
 function animate() {
 
     requestAnimationFrame(animate);
 
-    const dt = Math.min(
-        clock.getDelta(),
-        0.05
-    );
+    const dt = Math.min(clock.getDelta(), 0.05);
 
-    const time = clock.elapsedTime;
-
-    const now = performance.now() / 1000;
-
-    if (running && !ended) {
-
-        move(dt);
-        look(dt);
-
-        updateEnemies(dt, time);
-        updateReload(now);
-
-        if (msgTime > 0) {
-
-            msgTime -= dt;
-
-            if (msgTime <= 0) {
-                $("#message").classList.add("hidden");
-            }
-        }
-    }
+    update(dt);
 
     renderer.render(scene, camera);
 }
 
 animate();
-
-// ==========================================
-// 20. 화면 크기 변경
-// ==========================================
-
-window.addEventListener("resize", () => {
-
-    camera.aspect =
-        innerWidth / innerHeight;
-
-    camera.updateProjectionMatrix();
-
-    renderer.setSize(
-        innerWidth,
-        innerHeight
-    );
-});
