@@ -171,3 +171,30 @@ button:hover {
         font-size: 18px;
     }
 }
+/* 미니맵 */
+#minimap {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+
+    width: 180px;
+    height: 180px;
+
+    background: rgba(0, 0, 0, 0.85);
+    border: 2px solid #c99a4a;
+    border-radius: 5px;
+
+    image-rendering: pixelated;
+    z-index: 6;
+}
+
+/* 미니맵과 겹치지 않도록 HUD 이동 */
+.hud-left {
+    top: 215px;
+    left: 20px;
+}
+
+/* 적 체력 게이지는 게임 화면 안에서 표시 */
+#message {
+    z-index: 4;
+}
