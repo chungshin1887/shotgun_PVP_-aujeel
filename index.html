@@ -1,60 +1,98 @@
+
 <!DOCTYPE html>
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PVP Dungeon</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="icon" href="data:image/svg+xml, <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
-<path d='M12 38 Q12 30 20 30 H65 L88 42 H65 V50
 
-             H53
+    <link rel="stylesheet" href="./style.css">
 
-             L48 75
-
-             H32
-
-             L37 50
-
-             H20
-
-             Q12 50 12 42
-
-             Z'
-
-          fill='%23000000'/>
-
-    <rect x='68' y='36' width='20' height='8' rx='2'
-
-          fill='%23000000'/>
-
-</svg>">
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"
+        }
+    }
+    </script>
 </head>
-
 <body>
 
-    <div id="intro">
-        <h1>PVP DUNGEON</h1>
-        <p>RETRO FIRST PERSON SHOOTER</p>
-        <button id="startButton">💻 PC로 플레이</button>
-    </div>
+    <div id="game"></div>
 
-    <div id="game">
-        <div id="crosshair">+</div>
+    <!-- 시작 화면 -->
+    <section id="start" class="screen">
+        <main class="panel">
+            <p class="eyebrow">RETRO FIRST PERSON DUNGEON</p>
 
-        <div id="hud">
-            <div>HP <span id="hp">100</span></div>
-            <div>ENEMIES <span id="enemyCount">0</span></div>
-            <div>AMMO <span id="ammo">12</span> / 12</div>
+            <h1>PVP <span>DUNGEON</span></h1>
+
+            <p>던전을 탐험하고 모든 드론을 찾아라.</p>
+
+            <div class="keys">
+                <span><b>W A S D</b> 이동</span>
+                <span><b>방향키</b> 시점 이동</span>
+                <span><b>마우스 왼쪽</b> 발사</span>
+                <span><b>R</b> 재장전</span>
+                <span><b>ESC</b> 일시정지</span>
+            </div>
+
+            <button id="startBtn">게임 시작</button>
+
+            <small>마우스가 아닌 방향키로 시점을 조작합니다.</small>
+        </main>
+    </section>
+
+    <!-- 일시정지 화면 -->
+    <section id="pause" class="screen hidden">
+        <main class="panel">
+            <h2>PAUSED</h2>
+
+            <button id="resumeBtn">계속하기</button>
+            <button id="restartBtn" class="secondary">처음부터</button>
+        </main>
+    </section>
+
+    <!-- 게임 종료 화면 -->
+    <section id="end" class="screen hidden">
+        <main class="panel">
+            <h2 id="endTitle">MISSION COMPLETE</h2>
+
+            <p id="endText"></p>
+
+            <button id="againBtn">다시 플레이</button>
+        </main>
+    </section>
+
+    <!-- HUD -->
+    <header id="hud" class="hidden">
+        <div>
+            HEALTH
+            <strong id="hp">100</strong>
         </div>
 
-        <div id="message"></div>
-
-        <div id="gameover">
-            <h1>GAME OVER</h1>
-            <button onclick="location.reload()">RESTART</button>
+        <div>
+            DRONES
+            <strong id="left">0</strong>
         </div>
-    </div>
+
+        <div>
+            AMMO
+            <strong id="ammo">12 / 60</strong>
+        </div>
+    </header>
+
+    <!-- 조준점 -->
+    <div id="crosshair" class="hidden">+</div>
+
+    <!-- 메시지 -->
+    <div id="message" class="hidden"></div>
+
+    <!-- 재장전 표시 -->
+    <div id="reload" class="hidden">RELOADING...</div>
+
+    <!-- 피격 효과 -->
+    <div id="damage"></div>
 
     <script type="module" src="./src/main.js"></script>
 
