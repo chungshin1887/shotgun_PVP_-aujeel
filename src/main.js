@@ -1,4 +1,3 @@
-
 import * as THREE from "three";
 
 // ========================================
@@ -306,6 +305,7 @@ function canMoveTo(x, z) {
 // 9. 적 생성
 // ========================================
 
+// 맵에서 벽이 아닌 칸에 적 배치
 const enemyPositions = [
     { x: -8, z: -16 },
     { x: 12, z: -16 },
@@ -318,6 +318,7 @@ function createEnemy(x, z) {
 
     const group = new THREE.Group();
 
+    // 밝은 붉은색 몸체
     const bodyMaterial = new THREE.MeshStandardMaterial({
         color: 0xff2929,
         emissive: 0x8b0000,
@@ -333,6 +334,7 @@ function createEnemy(x, z) {
     body.position.y = 1.0;
     body.castShadow = true;
 
+    // 머리
     const headMaterial = new THREE.MeshStandardMaterial({
         color: 0xff7777,
         emissive: 0x550000,
@@ -347,6 +349,7 @@ function createEnemy(x, z) {
     head.position.y = 2.05;
     head.castShadow = true;
 
+    // 빛나는 눈
     const eyeMaterial = new THREE.MeshBasicMaterial({
         color: 0xffff00
     });
@@ -363,6 +366,7 @@ function createEnemy(x, z) {
 
     group.add(body, head, leftEye, rightEye);
 
+    // 적 주변의 붉은 빛
     const enemyLight = new THREE.PointLight(
         0xff2222,
         1.5,
@@ -372,6 +376,7 @@ function createEnemy(x, z) {
     enemyLight.position.y = 2;
     group.add(enemyLight);
 
+    // 체력 게이지용 캔버스
     const healthCanvas = document.createElement("canvas");
 
     healthCanvas.width = 128;
@@ -407,8 +412,9 @@ function createEnemy(x, z) {
         body,
         head,
 
-        hp: 100,
-        maxHp: 100,
+        // 적은 총알 3발을 맞아야 처치됨
+        hp: 3,
+        maxHp: 3,
 
         speed: 1.4,
         attackCooldown: 0,
@@ -452,6 +458,7 @@ function updateEnemyHealthBar(enemy) {
 
     ctx.clearRect(0, 0, width, height);
 
+    // 게이지 배경
     ctx.fillStyle = "#222222";
 
     ctx.fillRect(
@@ -461,6 +468,7 @@ function updateEnemyHealthBar(enemy) {
         height
     );
 
+    // 체력에 따른 색상
     if (ratio > 0.6) {
 
         ctx.fillStyle = "#35ed62";
@@ -475,6 +483,7 @@ function updateEnemyHealthBar(enemy) {
 
     }
 
+    // 현재 체력
     ctx.fillRect(
         2,
         2,
@@ -482,6 +491,7 @@ function updateEnemyHealthBar(enemy) {
         height - 4
     );
 
+    // 테두리
     ctx.strokeStyle = "#ffffff";
     ctx.lineWidth = 2;
 
@@ -494,6 +504,7 @@ function updateEnemyHealthBar(enemy) {
 
     enemy.healthTexture.needsUpdate = true;
 
+    // 한 번이라도 맞으면 게이지 표시
     enemy.healthBar.visible = true;
 }
 
@@ -626,6 +637,7 @@ function updateMinimap() {
 
     ctx.clearRect(0, 0, size, size);
 
+    // 배경
     ctx.fillStyle = "#101010";
     ctx.fillRect(0, 0, size, size);
 
@@ -634,6 +646,7 @@ function updateMinimap() {
     const offsetX = (size - mapSize) / 2;
     const offsetY = (size - mapSize) / 2;
 
+    // 벽과 통로
     for (let row = 0; row < MAP_HEIGHT; row++) {
 
         for (let col = 0; col < MAP_WIDTH; col++) {
@@ -704,9 +717,12 @@ function updateMinimap() {
     const playerY =
         offsetY + (playerRow + 0.5) * MINI_CELL;
 
+    // 플레이어 방향
     ctx.save();
 
     ctx.translate(playerX, playerY);
+
+    // 화살표의 뾰족한 부분이 바라보는 방향을 향하도록 회전
     ctx.rotate(-player.yaw);
 
     ctx.fillStyle = "#35ff72";
@@ -721,6 +737,7 @@ function updateMinimap() {
 
     ctx.restore();
 
+    // 테두리
     ctx.strokeStyle = "#c99a4a";
     ctx.lineWidth = 2;
 
@@ -747,6 +764,7 @@ function look(dt) {
         player.yaw -= TURN_SPEED * dt;
     }
 
+    // 상하 시점 이동 제거
     camera.rotation.y = player.yaw;
     camera.rotation.x = 0;
 }
@@ -889,13 +907,10 @@ function updateEnemies(dt) {
             if (player.hp <= 0) {
 
                 player.hp = 0;
-                player.alive = false;
 
                 updateHUD();
 
                 endGame(false);
-
-                return;
             }
         }
     }
@@ -958,7 +973,8 @@ function shoot() {
     let hitEnemy = null;
     let nearestEnemyDistance = Infinity;
 
-    // 적 전체를 감싸는 구형 적중 판정
+    // 적 메쉬 자체의 회전이나 세부 모양에 영향을 덜 받도록
+    // 각 적의 몸 전체를 감싸는 구형 판정 범위를 사용
     for (const enemy of enemies) {
 
         if (!enemy.alive) continue;
@@ -984,7 +1000,7 @@ function shoot() {
         // 벽이 적보다 앞에 있으면 적중하지 않음
         if (hitDistance >= nearestWallDistance) continue;
 
-        // 가장 가까운 적 선택
+        // 여러 적이 겹쳐 있을 경우 가장 가까운 적만 선택
         if (hitDistance < nearestEnemyDistance) {
             nearestEnemyDistance = hitDistance;
             hitEnemy = enemy;
@@ -993,24 +1009,36 @@ function shoot() {
 
     if (hitEnemy) {
 
-        // 적 한 명당 총알 1발로 처치
-        hitEnemy.hp = 0;
-        hitEnemy.alive = false;
+        // 총알에 맞을 때마다 적 체력 1 감소
+        hitEnemy.hp = Math.max(0, hitEnemy.hp - 1);
 
-        scene.remove(hitEnemy.group);
+        // 체력 게이지 갱신
+        updateEnemyHealthBar(hitEnemy);
 
-        const bodyIndex = enemyMeshes.indexOf(hitEnemy.body);
-        const headIndex = enemyMeshes.indexOf(hitEnemy.head);
+        // 체력이 0이 되었을 때만 적 처치
+        if (hitEnemy.hp <= 0) {
 
-        if (bodyIndex !== -1) {
-            enemyMeshes.splice(bodyIndex, 1);
+            hitEnemy.alive = false;
+            scene.remove(hitEnemy.group);
+
+            const bodyIndex = enemyMeshes.indexOf(hitEnemy.body);
+            const headIndex = enemyMeshes.indexOf(hitEnemy.head);
+
+            if (bodyIndex !== -1) {
+                enemyMeshes.splice(bodyIndex, 1);
+            }
+
+            if (headIndex !== -1) {
+                enemyMeshes.splice(headIndex, 1);
+            }
+
+            showMessage("ENEMY ELIMINATED!");
+
+        } else {
+
+            showMessage(`ENEMY HIT! HP: ${hitEnemy.hp}/${hitEnemy.maxHp}`);
+
         }
-
-        if (headIndex !== -1) {
-            enemyMeshes.splice(headIndex, 1);
-        }
-
-        showMessage("ENEMY ELIMINATED!");
 
     } else {
 
@@ -1172,7 +1200,7 @@ window.addEventListener("keydown", event => {
         pauseGame();
     }
 
-    // R: 재장전 (키를 처음 눌렀을 때만 실행)
+    // R: 재장전
     if (key === "r" && running && !event.repeat) {
         reload();
     }
