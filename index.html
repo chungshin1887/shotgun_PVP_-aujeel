@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PVP Dungeon</title>
+
     <link rel="stylesheet" href="style.css">
 
     <script type="importmap">
@@ -17,17 +18,20 @@
 </head>
 <body>
 
-    <!-- 게임 화면 -->
-    <div id="game"></div>
+    <!-- 3D 게임 화면 -->
+    <div id="game-container"></div>
+
+    <!-- 미니맵 -->
+    <canvas id="minimap" width="180" height="180"></canvas>
 
     <!-- HUD -->
     <div id="hud">
-        <div id="crosshair">+</div>
 
         <div class="hud-left">
+
             <div class="status-box">
                 <span>HEALTH</span>
-                <span id="hp">100</span>
+                <span id="health">100</span>
             </div>
 
             <div class="status-box">
@@ -37,25 +41,39 @@
 
             <div class="status-box">
                 <span>ENEMIES</span>
-                <span id="left">0</span>
+                <span id="enemy-count">5</span>
             </div>
+
         </div>
 
+        <div id="crosshair">+</div>
+
         <div id="message"></div>
-        <div id="reload"></div>
-        <div id="damage"></div>
+
     </div>
 
-    <!-- 미니맵 -->
-    <canvas id="minimap" width="180" height="180"></canvas>
+    <!-- 시작 / 일시정지 / 종료 화면 -->
+    <div id="overlay">
 
-    <!-- 시작 화면 -->
-    <div id="start" class="screen">
         <div class="screen-content">
-            <h1>PVP DUNGEON</h1>
-            <p>RETRO FIRST PERSON SHOOTER</p>
 
-            <button id="startBtn">START GAME</button>
+            <h1 id="menu-title">PVP DUNGEON</h1>
+
+            <p id="menu-description">
+                RETRO FIRST PERSON SHOOTER
+            </p>
+
+            <button id="start-button">
+                START GAME
+            </button>
+
+            <button id="resume-button" class="hidden">
+                RESUME
+            </button>
+
+            <button id="restart-button" class="hidden">
+                RESTART
+            </button>
 
             <div class="controls">
                 <p>W A S D : MOVE</p>
@@ -64,28 +82,12 @@
                 <p>R : RELOAD</p>
                 <p>ESC : PAUSE</p>
             </div>
+
         </div>
+
     </div>
 
-    <!-- 일시정지 화면 -->
-    <div id="pause" class="screen hidden">
-        <div class="screen-content">
-            <h1>PAUSED</h1>
-            <button id="resumeBtn">RESUME</button>
-        </div>
-    </div>
-
-    <!-- 게임 종료 화면 -->
-    <div id="end" class="screen hidden">
-        <div class="screen-content">
-            <h1 id="end-title">GAME OVER</h1>
-            <p id="end-message"></p>
-            <button id="restartBtn">RESTART</button>
-            <button id="againBtn">PLAY AGAIN</button>
-        </div>
-    </div>
-
-    <!-- JS -->
+    <!-- 게임 JS -->
     <script type="module" src="src/main.js"></script>
 
 </body>
