@@ -5,17 +5,21 @@
     box-sizing: border-box;
 }
 
+html,
 body {
-    width: 100vw;
-    height: 100vh;
+    width: 100%;
+    height: 100%;
     overflow: hidden;
     background: #000;
-    color: white;
-    font-family: Arial, sans-serif;
+    color: #fff;
+    font-family: Arial, Helvetica, sans-serif;
 }
 
-/* 게임 화면 */
-#game-container {
+/* =========================
+   게임 화면
+========================= */
+
+#game {
     position: fixed;
     inset: 0;
     width: 100%;
@@ -23,29 +27,21 @@ body {
     z-index: 1;
 }
 
-#game-container canvas {
+#game canvas {
     display: block;
     width: 100%;
     height: 100%;
 }
 
-/* HUD */
+/* =========================
+   HUD
+========================= */
+
 #hud {
     position: fixed;
     inset: 0;
     z-index: 10;
     pointer-events: none;
-}
-
-.game-title {
-    position: absolute;
-    top: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    font-size: 22px;
-    font-weight: bold;
-    letter-spacing: 4px;
-    text-shadow: 0 0 10px red;
 }
 
 .hud-left {
@@ -58,68 +54,88 @@ body {
 }
 
 .status-box {
-    background: rgba(0, 0, 0, 0.75);
-    border: 1px solid #777;
-    padding: 10px 15px;
-    min-width: 120px;
+    min-width: 125px;
+    padding: 10px 14px;
     display: flex;
     justify-content: space-between;
     gap: 15px;
-    font-size: 15px;
+
+    background: rgba(0, 0, 0, 0.8);
+    border: 1px solid #777;
+    border-radius: 4px;
+
+    font-size: 14px;
+    font-weight: bold;
 }
 
-.status-label {
+.status-box span:first-child {
     color: #aaa;
-    font-weight: bold;
 }
 
-#health {
+#hp {
     color: #ff5555;
-    font-weight: bold;
 }
 
 #ammo {
     color: #ffff55;
-    font-weight: bold;
 }
 
-#enemy-count {
+#left {
     color: #ff7777;
-    font-weight: bold;
 }
 
 /* 조준점 */
-.crosshair {
+
+#crosshair {
     position: absolute;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
+
+    color: white;
     font-size: 30px;
     font-weight: bold;
-    color: white;
     text-shadow: 0 0 5px black;
 }
 
 /* 메시지 */
-.hud-bottom {
+
+#message {
     position: absolute;
-    bottom: 30px;
-    width: 100%;
+    bottom: 35px;
+    left: 50%;
+    transform: translateX(-50%);
+
+    color: #ffff66;
+    font-size: 18px;
+    font-weight: bold;
+    text-shadow: 0 0 5px black;
     text-align: center;
 }
 
-#message {
-    font-size: 18px;
+#reload {
+    position: absolute;
+    bottom: 75px;
+    left: 50%;
+    transform: translateX(-50%);
     color: #ffff66;
-    text-shadow: 0 0 5px black;
+    font-size: 16px;
 }
 
-/* 미니맵 */
+#damage {
+    position: absolute;
+    inset: 0;
+    background: rgba(255, 0, 0, 0);
+    pointer-events: none;
+}
+
+/* =========================
+   미니맵
+========================= */
+
 #minimap {
     position: fixed;
     display: block;
-    visibility: visible;
-    opacity: 1;
 
     top: 20px;
     left: 20px;
@@ -130,59 +146,84 @@ body {
     z-index: 100;
 
     background: rgba(0, 0, 0, 0.9);
-    border: 2px solid white;
+    border: 2px solid #fff;
     border-radius: 8px;
 
     image-rendering: pixelated;
     pointer-events: none;
 }
 
-/* 화면 중앙 메뉴 */
+/* =========================
+   시작 / 일시정지 / 종료 화면
+========================= */
+
 .screen {
     position: fixed;
     inset: 0;
+
     display: flex;
     justify-content: center;
     align-items: center;
-    background: rgba(0, 0, 0, 0.9);
+
+    background: rgba(0, 0, 0, 0.92);
     z-index: 1000;
 }
 
 .screen-content {
+    width: min(90%, 600px);
+    padding: 40px 25px;
     text-align: center;
-    padding: 40px;
 }
 
 .screen-content h1 {
-    font-size: 55px;
-    letter-spacing: 5px;
+    margin-bottom: 18px;
+
     color: #ff3333;
-    text-shadow: 0 0 20px red;
-    margin-bottom: 15px;
+    font-size: clamp(35px, 7vw, 60px);
+    font-weight: 900;
+    letter-spacing: 5px;
+
+    text-shadow:
+        0 0 10px #ff0000,
+        0 0 25px #990000;
 }
 
 .screen-content p {
+    margin-bottom: 20px;
     color: #aaa;
-    margin-bottom: 25px;
     letter-spacing: 2px;
 }
 
+/* 버튼 */
+
 button {
-    padding: 15px 40px;
+    margin: 15px;
+    padding: 14px 35px;
+
     background: #a80000;
     border: 2px solid #ff4444;
+    border-radius: 4px;
+
     color: white;
-    font-size: 20px;
+    font-size: 18px;
     font-weight: bold;
+
     cursor: pointer;
     transition: 0.2s;
-    margin: 15px;
+    pointer-events: auto;
 }
 
 button:hover {
     background: #ff2222;
     transform: scale(1.05);
+    box-shadow: 0 0 15px #ff0000;
 }
+
+button:active {
+    transform: scale(0.97);
+}
+
+/* 조작법 */
 
 .controls {
     margin-top: 25px;
@@ -195,20 +236,28 @@ button:hover {
     margin: 5px;
 }
 
+/* 숨김 처리 */
+
 .hidden {
     display: none !important;
 }
 
-/* 작은 화면 */
+/* =========================
+   작은 화면 대응
+========================= */
+
 @media (max-width: 600px) {
     #minimap {
         width: 140px;
         height: 140px;
+        top: 10px;
+        left: 10px;
     }
 
     .hud-left {
-        top: 175px;
+        top: 165px;
         left: 10px;
+        gap: 6px;
     }
 
     .status-box {
@@ -217,7 +266,12 @@ button:hover {
         font-size: 12px;
     }
 
-    .game-title {
+    button {
+        padding: 12px 25px;
         font-size: 16px;
+    }
+
+    .controls {
+        font-size: 11px;
     }
 }
