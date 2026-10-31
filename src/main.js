@@ -938,7 +938,6 @@ function shoot() {
     }
 
     player.ammo--;
-
     player.shotCooldown = 0.25;
 
     // 무기 반동
@@ -948,25 +947,32 @@ function shoot() {
         weapon.position.z = -0.65;
     }, 80);
 
-    // 적과 벽의 위치 정보를 최신 상태로 갱신
+    // 카메라와 적의 위치 정보 갱신
     scene.updateMatrixWorld(true);
     camera.updateMatrixWorld(true);
 
+    // 화면 정중앙을 향해 발사
     raycaster.setFromCamera(
         new THREE.Vector2(0, 0),
         camera
     );
 
-    // 살아 있는 적만 검사
-    const activeEnemyMeshes = enemyMeshes.filter(mesh => {
-        return mesh.userData.enemy?.alive;
-    });
-
-    const enemyHits = raycaster.intersectObjects(
-        activeEnemyMeshes,
-        false
+    // 살아 있는 적들의 그룹만 가져오기
+    const activeEnemies = enemies.filter(
+        enemy => enemy.alive
     );
 
+    const enemyGroups = activeEnemies.map(
+        enemy => enemy.group
+    );
+
+    // 적 그룹 내부의 모든 메쉬까지 검사
+    const enemyHits = raycaster.intersectObjects(
+        enemyGroups,
+        true
+    );
+
+    // 벽 충돌 검사
     const wallHits = raycaster.intersectObjects(
         walls,
         false
@@ -974,29 +980,48 @@ function shoot() {
 
     let hitEnemy = null;
 
+    // 가장 가까운 적부터 확인
     if (enemyHits.length > 0) {
 
-        const firstEnemyHit = enemyHits[0];
+        const firstHit = enemyHits[0];
 
         const nearestWall = wallHits.length > 0
             ? wallHits[0].distance
             : Infinity;
 
-        // 벽 뒤의 적은 맞지 않음
-        if (firstEnemyHit.distance < nearestWall) {
-            hitEnemy = firstEnemyHit.object.userData.enemy;
+        // 벽에 막히지 않았을 때만 적에게 피해
+        if (firstHit.distance < nearestWall) {
+
+            // 맞은 메쉬가 속한 적 찾기
+            hitEnemy = activeEnemies.find(enemy =>
+                enemy.group === firstHit.object.parent ||
+                enemy.group.children.includes(firstHit.object)
+            );
+
+            // 부모 그룹이 여러 단계인 경우에도 찾기
+            if (!hitEnemy) {
+                let current = firstHit.object;
+
+                while (current) {
+
+                    hitEnemy = activeEnemies.find(
+                        enemy => enemy.group === current
+                    );
+
+                    if (hitEnemy) break;
+
+                    current = current.parent;
+                }
+            }
         }
     }
 
+    // 적을 맞혔을 때
     if (hitEnemy && hitEnemy.alive) {
 
-        // 총알 한 발당 적에게 50의 피해
         hitEnemy.hp -= 50;
 
-        // 체력 게이지 갱신
         updateEnemyHealthBar(hitEnemy);
-
-        showMessage("HIT!");
 
         if (hitEnemy.hp <= 0) {
 
@@ -1005,7 +1030,7 @@ function shoot() {
 
             scene.remove(hitEnemy.group);
 
-            // 제거된 적의 메쉬도 발사 판정에서 제외
+            // 기존 발사 판정 목록에서도 제거
             const bodyIndex = enemyMeshes.indexOf(hitEnemy.body);
             const headIndex = enemyMeshes.indexOf(hitEnemy.head);
 
@@ -1018,6 +1043,10 @@ function shoot() {
             }
 
             showMessage("ENEMY ELIMINATED!");
+
+        } else {
+
+            showMessage("HIT!");
         }
 
     } else {
@@ -1027,6 +1056,7 @@ function shoot() {
 
     updateHUD();
 
+    // 남은 적 확인
     const remaining = enemies.filter(
         enemy => enemy.alive
     ).length;
@@ -1035,7 +1065,6 @@ function shoot() {
         showMessage("ALL ENEMIES DEFEATED!");
     }
 }
-
 
 // ========================================
 // 20. 재장전
