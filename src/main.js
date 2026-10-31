@@ -904,10 +904,13 @@ function updateEnemies(dt) {
             if (player.hp <= 0) {
 
                 player.hp = 0;
+                player.alive = false;
 
                 updateHUD();
 
                 endGame(false);
+
+                return;
             }
         }
     }
@@ -945,6 +948,8 @@ function shoot() {
         weapon.position.z = -0.65;
     }, 80);
 
+    // 적과 벽의 위치 정보를 최신 상태로 갱신
+    scene.updateMatrixWorld(true);
     camera.updateMatrixWorld(true);
 
     raycaster.setFromCamera(
@@ -985,7 +990,8 @@ function shoot() {
 
     if (hitEnemy && hitEnemy.alive) {
 
-        hitEnemy.hp -= 35;
+        // 총알 한 발당 적에게 50의 피해
+        hitEnemy.hp -= 50;
 
         // 체력 게이지 갱신
         updateEnemyHealthBar(hitEnemy);
@@ -1108,14 +1114,16 @@ function endGame(victory) {
 
     menuTitle.textContent = victory
         ? "VICTORY!"
-        : "GAME OVER";
+        : "Died";
 
     menuDescription.textContent = victory
         ? "YOU ESCAPED THE DUNGEON."
-        : "YOU HAVE BEEN DEFEATED.";
+        : "YOU WERE DEFEATED. TRY AGAIN!";
 
     startButton.classList.add("hidden");
     resumeButton.classList.add("hidden");
+
+    restartButton.textContent = "다시 시작하기";
     restartButton.classList.remove("hidden");
 }
 
