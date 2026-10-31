@@ -31,8 +31,10 @@ renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 container.appendChild(renderer.domElement);
 
 const clock = new THREE.Clock();
+
+
 // ========================================
-// 미니맵 설정
+// 2. 미니맵 설정
 // ========================================
 
 const minimap = document.getElementById("minimap");
@@ -40,111 +42,9 @@ const minimapCtx = minimap.getContext("2d");
 
 const MINI_CELL = 14;
 
-function updateMinimap() {
-
-    const ctx = minimapCtx;
-    const size = minimap.width;
-
-    ctx.clearRect(0, 0, size, size);
-
-    // 배경
-    ctx.fillStyle = "#101010";
-    ctx.fillRect(0, 0, size, size);
-
-    const mapSize = MAP_WIDTH * MINI_CELL;
-
-    const offsetX = (size - mapSize) / 2;
-    const offsetY = (size - mapSize) / 2;
-
-    // 벽과 통로 표시
-    for (let row = 0; row < MAP_HEIGHT; row++) {
-        for (let col = 0; col < MAP_WIDTH; col++) {
-
-            const x = offsetX + col * MINI_CELL;
-            const y = offsetY + row * MINI_CELL;
-
-            if (MAP[row][col] === "1") {
-                ctx.fillStyle = "#77716a";
-            } else {
-                ctx.fillStyle = "#252525";
-            }
-
-            ctx.fillRect(
-                x,
-                y,
-                MINI_CELL - 1,
-                MINI_CELL - 1
-            );
-        }
-    }
-
-    // 출구 표시
-    ctx.fillStyle = "#00eaff";
-
-    ctx.fillRect(
-        offsetX + 9 * MINI_CELL + 3,
-        offsetY + 9 * MINI_CELL + 3,
-        8,
-        8
-    );
-
-    // 적 위치 표시
-    for (const enemy of enemies) {
-
-        if (!enemy.alive) continue;
-
-        const col = enemy.group.position.x / CELL
-            + (MAP_WIDTH - 1) / 2;
-
-        const row = enemy.group.position.z / CELL
-            + (MAP_HEIGHT - 1) / 2;
-
-        const x = offsetX + (col + 0.5) * MINI_CELL;
-        const y = offsetY + (row + 0.5) * MINI_CELL;
-
-        ctx.fillStyle = "#ff3030";
-        ctx.beginPath();
-        ctx.arc(x, y, 4, 0, Math.PI * 2);
-        ctx.fill();
-    }
-
-    // 플레이어 위치
-    const playerCol = player.x / CELL
-        + (MAP_WIDTH - 1) / 2;
-
-    const playerRow = player.z / CELL
-        + (MAP_HEIGHT - 1) / 2;
-
-    const playerX = offsetX + (playerCol + 0.5) * MINI_CELL;
-    const playerY = offsetY + (playerRow + 0.5) * MINI_CELL;
-
-    // 플레이어 방향 화살표
-    ctx.save();
-
-    ctx.translate(playerX, playerY);
-    ctx.rotate(player.yaw);
-
-    ctx.fillStyle = "#35ff72";
-    ctx.beginPath();
-
-    ctx.moveTo(0, -7);
-    ctx.lineTo(-5, 5);
-    ctx.lineTo(5, 5);
-
-    ctx.closePath();
-    ctx.fill();
-
-    ctx.restore();
-
-    // 테두리
-    ctx.strokeStyle = "#c99a4a";
-    ctx.lineWidth = 2;
-    ctx.strokeRect(0, 0, size, size);
-}
-
 
 // ========================================
-// 2. 게임 설정
+// 3. 게임 설정
 // ========================================
 
 const CELL = 4;
@@ -182,7 +82,6 @@ let running = false;
 let gameEnded = false;
 let paused = false;
 
-let elapsedTime = 0;
 let reloadTimer = 0;
 
 const keys = {};
@@ -191,7 +90,7 @@ const raycaster = new THREE.Raycaster();
 
 
 // ========================================
-// 3. 플레이어 설정
+// 4. 플레이어 설정
 // ========================================
 
 const player = {
@@ -199,7 +98,6 @@ const player = {
     z: -16,
     y: 1.6,
 
-    // 시작할 때 열린 통로 방향을 바라보게 설정
     yaw: Math.PI,
 
     hp: 100,
@@ -224,7 +122,7 @@ camera.rotation.x = 0;
 
 
 // ========================================
-// 4. 조명
+// 5. 조명
 // ========================================
 
 const ambientLight = new THREE.AmbientLight(
@@ -255,7 +153,7 @@ scene.add(camera);
 
 
 // ========================================
-// 5. 바닥과 천장
+// 6. 바닥과 천장
 // ========================================
 
 const floorGeometry = new THREE.PlaneGeometry(
@@ -297,11 +195,12 @@ const ceiling = new THREE.Mesh(
 
 ceiling.rotation.x = Math.PI / 2;
 ceiling.position.y = 4;
+
 scene.add(ceiling);
 
 
 // ========================================
-// 6. 던전 벽 생성
+// 7. 던전 벽 생성
 // ========================================
 
 const wallGeometry = new THREE.BoxGeometry(
@@ -317,6 +216,7 @@ const wallMaterials = [
 ];
 
 function gridToWorld(col, row) {
+
     return {
         x: (col - (MAP_WIDTH - 1) / 2) * CELL,
         z: (row - (MAP_HEIGHT - 1) / 2) * CELL
@@ -363,13 +263,18 @@ createWalls();
 
 
 // ========================================
-// 7. 충돌 검사
+// 8. 충돌 검사
 // ========================================
 
 function isWall(x, z) {
 
-    const col = Math.floor(x / CELL + MAP_WIDTH / 2);
-    const row = Math.floor(z / CELL + MAP_HEIGHT / 2);
+    const col = Math.floor(
+        x / CELL + MAP_WIDTH / 2
+    );
+
+    const row = Math.floor(
+        z / CELL + MAP_HEIGHT / 2
+    );
 
     if (
         row < 0 ||
@@ -397,66 +302,110 @@ function canMoveTo(x, z) {
 
 
 // ========================================
-// 8. 적 생성
+// 9. 적 생성
 // ========================================
 
+// 맵에서 벽이 아닌 칸에 적 배치
 const enemyPositions = [
-    { x: -4, z: -8 },
-    { x: 4, z: -4 },
-    { x: 12, z: 0 },
-    { x: -8, z: 8 },
-    { x: 8, z: 12 }
+    { x: -8, z: -16 },
+    { x: 12, z: -16 },
+    { x: 12, z: -8 },
+    { x: -12, z: 0 },
+    { x: 12, z: 8 }
 ];
 
 function createEnemy(x, z) {
 
     const group = new THREE.Group();
 
+    // 밝은 붉은색 몸체
     const bodyMaterial = new THREE.MeshStandardMaterial({
-        color: 0x9c2929,
-        roughness: 0.8
+        color: 0xff2929,
+        emissive: 0x8b0000,
+        emissiveIntensity: 0.7,
+        roughness: 0.5
     });
 
     const body = new THREE.Mesh(
-        new THREE.BoxGeometry(0.9, 1.3, 0.65),
+        new THREE.BoxGeometry(1.05, 1.55, 0.8),
         bodyMaterial
     );
 
-    body.position.y = 0.9;
+    body.position.y = 1.0;
     body.castShadow = true;
 
+    // 머리
+    const headMaterial = new THREE.MeshStandardMaterial({
+        color: 0xff7777,
+        emissive: 0x550000,
+        emissiveIntensity: 0.5
+    });
+
     const head = new THREE.Mesh(
-        new THREE.SphereGeometry(0.35, 12, 12),
-        new THREE.MeshStandardMaterial({
-            color: 0x553333
-        })
+        new THREE.SphereGeometry(0.42, 16, 16),
+        headMaterial
     );
 
-    head.position.y = 1.75;
+    head.position.y = 2.05;
     head.castShadow = true;
 
+    // 빛나는 눈
     const eyeMaterial = new THREE.MeshBasicMaterial({
-        color: 0xff2222
+        color: 0xffff00
     });
 
     const leftEye = new THREE.Mesh(
-        new THREE.SphereGeometry(0.06, 8, 8),
+        new THREE.SphereGeometry(0.09, 10, 10),
         eyeMaterial
     );
 
     const rightEye = leftEye.clone();
 
-    leftEye.position.set(-0.13, 1.8, -0.31);
-    rightEye.position.set(0.13, 1.8, -0.31);
+    leftEye.position.set(-0.16, 2.1, -0.37);
+    rightEye.position.set(0.16, 2.1, -0.37);
 
     group.add(body, head, leftEye, rightEye);
+
+    // 적 주변의 붉은 빛
+    const enemyLight = new THREE.PointLight(
+        0xff2222,
+        1.5,
+        5
+    );
+
+    enemyLight.position.y = 2;
+    group.add(enemyLight);
+
+    // 체력 게이지용 캔버스
+    const healthCanvas = document.createElement("canvas");
+
+    healthCanvas.width = 128;
+    healthCanvas.height = 20;
+
+    const healthCtx = healthCanvas.getContext("2d");
+
+    const healthTexture = new THREE.CanvasTexture(
+        healthCanvas
+    );
+
+    const healthMaterial = new THREE.SpriteMaterial({
+        map: healthTexture,
+        transparent: true,
+        depthTest: false
+    });
+
+    const healthBar = new THREE.Sprite(healthMaterial);
+
+    healthBar.position.y = 2.8;
+    healthBar.scale.set(1.4, 0.22, 1);
+
+    healthBar.visible = false;
+
+    group.add(healthBar);
 
     group.position.set(x, 0, z);
 
     scene.add(group);
-
-    body.userData.enemy = null;
-    head.userData.enemy = null;
 
     const enemy = {
         group,
@@ -464,16 +413,24 @@ function createEnemy(x, z) {
         head,
 
         hp: 100,
-        speed: 1.4,
+        maxHp: 100,
 
+        speed: 1.4,
         attackCooldown: 0,
-        alive: true
+
+        alive: true,
+
+        healthCanvas,
+        healthCtx,
+        healthTexture,
+        healthBar
     };
 
     body.userData.enemy = enemy;
     head.userData.enemy = enemy;
 
     enemies.push(enemy);
+
     enemyMeshes.push(body, head);
 }
 
@@ -483,7 +440,85 @@ enemyPositions.forEach(position => {
 
 
 // ========================================
-// 9. 출구 생성
+// 10. 적 체력 게이지
+// ========================================
+
+function updateEnemyHealthBar(enemy) {
+
+    const ctx = enemy.healthCtx;
+
+    const width = enemy.healthCanvas.width;
+    const height = enemy.healthCanvas.height;
+
+    const ratio = Math.max(
+        0,
+        enemy.hp / enemy.maxHp
+    );
+
+    ctx.clearRect(0, 0, width, height);
+
+    // 게이지 배경
+    ctx.fillStyle = "#222222";
+
+    ctx.fillRect(
+        0,
+        0,
+        width,
+        height
+    );
+
+    // 체력에 따른 색상
+    if (ratio > 0.6) {
+
+        ctx.fillStyle = "#35ed62";
+
+    } else if (ratio > 0.3) {
+
+        ctx.fillStyle = "#ffd447";
+
+    } else {
+
+        ctx.fillStyle = "#ff3030";
+
+    }
+
+    // 현재 체력
+    ctx.fillRect(
+        2,
+        2,
+        (width - 4) * ratio,
+        height - 4
+    );
+
+    // 테두리
+    ctx.strokeStyle = "#ffffff";
+    ctx.lineWidth = 2;
+
+    ctx.strokeRect(
+        1,
+        1,
+        width - 2,
+        height - 2
+    );
+
+    enemy.healthTexture.needsUpdate = true;
+
+    // 한 번이라도 맞으면 게이지 표시
+    enemy.healthBar.visible = true;
+}
+
+
+// ========================================
+// 11. 적 생성 실행
+// ========================================
+
+enemyPositions.forEach(position => {
+    // 이미 생성했으므로 여기서는 추가 생성하지 않음
+});
+
+
+// ========================================
+// 12. 출구 생성
 // ========================================
 
 const exitPosition = gridToWorld(9, 9);
@@ -523,7 +558,7 @@ scene.add(exitGroup);
 
 
 // ========================================
-// 10. 무기 모델
+// 13. 무기 모델
 // ========================================
 
 const weapon = new THREE.Group();
@@ -556,7 +591,7 @@ camera.add(weapon);
 
 
 // ========================================
-// 11. HUD 업데이트
+// 14. HUD 업데이트
 // ========================================
 
 const healthElement = document.getElementById("health");
@@ -578,7 +613,6 @@ function updateHUD() {
 function showMessage(text, duration = 1.2) {
 
     messageElement.textContent = text;
-
     messageElement.style.opacity = "1";
 
     window.clearTimeout(showMessage.timeout);
@@ -592,29 +626,149 @@ updateHUD();
 
 
 // ========================================
-// 12. 시점 회전
+// 15. 미니맵 업데이트
+// ========================================
+
+function updateMinimap() {
+
+    const ctx = minimapCtx;
+    const size = minimap.width;
+
+    ctx.clearRect(0, 0, size, size);
+
+    // 배경
+    ctx.fillStyle = "#101010";
+    ctx.fillRect(0, 0, size, size);
+
+    const mapSize = MAP_WIDTH * MINI_CELL;
+
+    const offsetX = (size - mapSize) / 2;
+    const offsetY = (size - mapSize) / 2;
+
+    // 벽과 통로
+    for (let row = 0; row < MAP_HEIGHT; row++) {
+
+        for (let col = 0; col < MAP_WIDTH; col++) {
+
+            const x = offsetX + col * MINI_CELL;
+            const y = offsetY + row * MINI_CELL;
+
+            if (MAP[row][col] === "1") {
+                ctx.fillStyle = "#77716a";
+            } else {
+                ctx.fillStyle = "#252525";
+            }
+
+            ctx.fillRect(
+                x,
+                y,
+                MINI_CELL - 1,
+                MINI_CELL - 1
+            );
+        }
+    }
+
+    // 출구
+    ctx.fillStyle = "#00eaff";
+
+    ctx.fillRect(
+        offsetX + 9 * MINI_CELL + 3,
+        offsetY + 9 * MINI_CELL + 3,
+        8,
+        8
+    );
+
+    // 적 위치
+    for (const enemy of enemies) {
+
+        if (!enemy.alive) continue;
+
+        const col =
+            enemy.group.position.x / CELL +
+            (MAP_WIDTH - 1) / 2;
+
+        const row =
+            enemy.group.position.z / CELL +
+            (MAP_HEIGHT - 1) / 2;
+
+        const x = offsetX + (col + 0.5) * MINI_CELL;
+        const y = offsetY + (row + 0.5) * MINI_CELL;
+
+        ctx.fillStyle = "#ff3030";
+
+        ctx.beginPath();
+        ctx.arc(x, y, 4, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    // 플레이어 위치
+    const playerCol =
+        player.x / CELL +
+        (MAP_WIDTH - 1) / 2;
+
+    const playerRow =
+        player.z / CELL +
+        (MAP_HEIGHT - 1) / 2;
+
+    const playerX =
+        offsetX + (playerCol + 0.5) * MINI_CELL;
+
+    const playerY =
+        offsetY + (playerRow + 0.5) * MINI_CELL;
+
+    // 플레이어 방향
+    ctx.save();
+
+    ctx.translate(playerX, playerY);
+    ctx.rotate(player.yaw);
+
+    ctx.fillStyle = "#35ff72";
+
+    ctx.beginPath();
+    ctx.moveTo(0, -7);
+    ctx.lineTo(-5, 5);
+    ctx.lineTo(5, 5);
+    ctx.closePath();
+
+    ctx.fill();
+
+    ctx.restore();
+
+    // 테두리
+    ctx.strokeStyle = "#c99a4a";
+    ctx.lineWidth = 2;
+
+    ctx.strokeRect(
+        0,
+        0,
+        size,
+        size
+    );
+}
+
+
+// ========================================
+// 16. 시점 회전
 // ========================================
 
 function look(dt) {
 
-    // 왼쪽 화살표: 왼쪽 회전
     if (keys.arrowleft) {
         player.yaw += TURN_SPEED * dt;
     }
 
-    // 오른쪽 화살표: 오른쪽 회전
     if (keys.arrowright) {
         player.yaw -= TURN_SPEED * dt;
     }
 
-    // 위아래 시점 이동은 사용하지 않음
+    // 상하 시점 이동 제거
     camera.rotation.y = player.yaw;
     camera.rotation.x = 0;
 }
 
 
 // ========================================
-// 13. 플레이어 이동
+// 17. 플레이어 이동
 // ========================================
 
 function movePlayer(dt) {
@@ -628,7 +782,10 @@ function movePlayer(dt) {
     if (keys.d) sideAmount += 1;
     if (keys.a) sideAmount -= 1;
 
-    if (forwardAmount === 0 && sideAmount === 0) {
+    if (
+        forwardAmount === 0 &&
+        sideAmount === 0
+    ) {
         return;
     }
 
@@ -646,8 +803,15 @@ function movePlayer(dt) {
 
     const movement = new THREE.Vector3();
 
-    movement.addScaledVector(forward, forwardAmount);
-    movement.addScaledVector(right, sideAmount);
+    movement.addScaledVector(
+        forward,
+        forwardAmount
+    );
+
+    movement.addScaledVector(
+        right,
+        sideAmount
+    );
 
     movement.normalize();
     movement.multiplyScalar(MOVE_SPEED * dt);
@@ -655,8 +819,6 @@ function movePlayer(dt) {
     const nextX = player.x + movement.x;
     const nextZ = player.z + movement.z;
 
-    // X축과 Z축을 따로 검사하여 벽에 부딪혀도
-    // 가능한 방향으로 이동할 수 있게 함
     if (canMoveTo(nextX, player.z)) {
         player.x = nextX;
     }
@@ -674,7 +836,7 @@ function movePlayer(dt) {
 
 
 // ========================================
-// 14. 적 AI
+// 18. 적 AI
 // ========================================
 
 function updateEnemies(dt) {
@@ -685,16 +847,24 @@ function updateEnemies(dt) {
 
         enemy.attackCooldown -= dt;
 
-        const dx = player.x - enemy.group.position.x;
-        const dz = player.z - enemy.group.position.z;
+        const dx =
+            player.x - enemy.group.position.x;
 
-        const distance = Math.sqrt(dx * dx + dz * dz);
+        const dz =
+            player.z - enemy.group.position.z;
 
-        // 플레이어를 바라보게 설정
+        const distance = Math.sqrt(
+            dx * dx + dz * dz
+        );
+
+        // 플레이어 바라보기
         enemy.group.rotation.y = Math.atan2(dx, dz);
 
-        // 가까워지면 플레이어를 추적
-        if (distance > 1.5 && distance < 18) {
+        // 플레이어 추적
+        if (
+            distance > 1.5 &&
+            distance < 18
+        ) {
 
             const moveX =
                 (dx / distance) * enemy.speed * dt;
@@ -702,8 +872,11 @@ function updateEnemies(dt) {
             const moveZ =
                 (dz / distance) * enemy.speed * dt;
 
-            const nextX = enemy.group.position.x + moveX;
-            const nextZ = enemy.group.position.z + moveZ;
+            const nextX =
+                enemy.group.position.x + moveX;
+
+            const nextZ =
+                enemy.group.position.z + moveZ;
 
             if (!isWall(nextX, enemy.group.position.z)) {
                 enemy.group.position.x = nextX;
@@ -714,7 +887,7 @@ function updateEnemies(dt) {
             }
         }
 
-        // 플레이어에게 가까이 왔을 때 공격
+        // 플레이어 공격
         if (
             distance < 1.6 &&
             enemy.attackCooldown <= 0
@@ -729,8 +902,11 @@ function updateEnemies(dt) {
             updateHUD();
 
             if (player.hp <= 0) {
+
                 player.hp = 0;
+
                 updateHUD();
+
                 endGame(false);
             }
         }
@@ -739,7 +915,7 @@ function updateEnemies(dt) {
 
 
 // ========================================
-// 15. 총 발사
+// 19. 총 발사
 // ========================================
 
 function shoot() {
@@ -769,7 +945,6 @@ function shoot() {
         weapon.position.z = -0.65;
     }, 80);
 
-    // 카메라 중앙에서 정면으로 발사
     camera.updateMatrixWorld(true);
 
     raycaster.setFromCamera(
@@ -777,8 +952,13 @@ function shoot() {
         camera
     );
 
+    // 살아 있는 적만 검사
+    const activeEnemyMeshes = enemyMeshes.filter(mesh => {
+        return mesh.userData.enemy?.alive;
+    });
+
     const enemyHits = raycaster.intersectObjects(
-        enemyMeshes,
+        activeEnemyMeshes,
         false
     );
 
@@ -797,7 +977,7 @@ function shoot() {
             ? wallHits[0].distance
             : Infinity;
 
-        // 벽 뒤에 있는 적은 맞지 않도록 처리
+        // 벽 뒤의 적은 맞지 않음
         if (firstEnemyHit.distance < nearestWall) {
             hitEnemy = firstEnemyHit.object.userData.enemy;
         }
@@ -807,28 +987,43 @@ function shoot() {
 
         hitEnemy.hp -= 35;
 
+        // 체력 게이지 갱신
+        updateEnemyHealthBar(hitEnemy);
+
         showMessage("HIT!");
 
         if (hitEnemy.hp <= 0) {
 
+            hitEnemy.hp = 0;
             hitEnemy.alive = false;
 
             scene.remove(hitEnemy.group);
 
-            showMessage("ENEMY ELIMINATED!");
+            // 제거된 적의 메쉬도 발사 판정에서 제외
+            const bodyIndex = enemyMeshes.indexOf(hitEnemy.body);
+            const headIndex = enemyMeshes.indexOf(hitEnemy.head);
 
+            if (bodyIndex !== -1) {
+                enemyMeshes.splice(bodyIndex, 1);
+            }
+
+            if (headIndex !== -1) {
+                enemyMeshes.splice(headIndex, 1);
+            }
+
+            showMessage("ENEMY ELIMINATED!");
         }
 
     } else {
 
         showMessage("SHOT!");
-
     }
 
     updateHUD();
 
-    // 모든 적을 처치했는지 확인
-    const remaining = enemies.filter(enemy => enemy.alive).length;
+    const remaining = enemies.filter(
+        enemy => enemy.alive
+    ).length;
 
     if (remaining === 0) {
         showMessage("ALL ENEMIES DEFEATED!");
@@ -837,7 +1032,7 @@ function shoot() {
 
 
 // ========================================
-// 16. 재장전
+// 20. 재장전
 // ========================================
 
 function reload() {
@@ -857,6 +1052,7 @@ function reload() {
     }
 
     player.reloading = true;
+
     reloadTimer = RELOAD_TIME;
 
     showMessage("RELOADING...");
@@ -890,7 +1086,7 @@ function updateReload(dt) {
 
 
 // ========================================
-// 17. 게임 승리 / 패배
+// 21. 게임 승리 / 패배
 // ========================================
 
 const overlay = document.getElementById("overlay");
@@ -925,7 +1121,7 @@ function endGame(victory) {
 
 
 // ========================================
-// 18. 출구 도착 검사
+// 22. 출구 도착 검사
 // ========================================
 
 function checkExit() {
@@ -933,7 +1129,9 @@ function checkExit() {
     const dx = player.x - exitPosition.x;
     const dz = player.z - exitPosition.z;
 
-    const distance = Math.sqrt(dx * dx + dz * dz);
+    const distance = Math.sqrt(
+        dx * dx + dz * dz
+    );
 
     if (distance < 2.2) {
 
@@ -942,8 +1140,11 @@ function checkExit() {
         ).length;
 
         if (remaining === 0) {
+
             endGame(true);
+
         } else {
+
             showMessage("DEFEAT ALL ENEMIES FIRST!");
         }
     }
@@ -951,7 +1152,7 @@ function checkExit() {
 
 
 // ========================================
-// 19. 키보드 입력
+// 23. 키보드 입력
 // ========================================
 
 window.addEventListener("keydown", event => {
@@ -1001,11 +1202,8 @@ window.addEventListener("blur", () => {
 
 
 // ========================================
-// 20. 마우스 클릭 발사 기능 제거
+// 24. 마우스 발사 기능 제거
 // ========================================
-
-// 마우스 클릭으로 총이 발사되지 않도록 함
-// 발사는 오직 Space 키로만 가능
 
 window.addEventListener("contextmenu", event => {
     event.preventDefault();
@@ -1013,7 +1211,7 @@ window.addEventListener("contextmenu", event => {
 
 
 // ========================================
-// 21. 게임 시작
+// 25. 게임 시작
 // ========================================
 
 function startGame() {
@@ -1033,11 +1231,14 @@ function startGame() {
     showMessage("FIND THE EXIT!");
 }
 
-startButton.addEventListener("click", startGame);
+startButton.addEventListener(
+    "click",
+    startGame
+);
 
 
 // ========================================
-// 22. 일시정지
+// 26. 일시정지
 // ========================================
 
 function pauseGame() {
@@ -1069,31 +1270,34 @@ function resumeGame() {
     clock.getDelta();
 }
 
-resumeButton.addEventListener("click", resumeGame);
+resumeButton.addEventListener(
+    "click",
+    resumeGame
+);
 
 
 // ========================================
-// 23. 게임 재시작
+// 27. 게임 재시작
 // ========================================
 
 function restartGame() {
 
-    // 페이지를 새로고침하여 모든 게임 상태 초기화
     window.location.reload();
 }
 
-restartButton.addEventListener("click", restartGame);
+restartButton.addEventListener(
+    "click",
+    restartGame
+);
 
 
 // ========================================
-// 24. 게임 업데이트
+// 28. 게임 업데이트
 // ========================================
 
 function update(dt) {
 
     if (!running || gameEnded) return;
-
-    elapsedTime += dt;
 
     player.shotCooldown = Math.max(
         0,
@@ -1113,7 +1317,7 @@ function update(dt) {
 
 
 // ========================================
-// 25. 화면 크기 변경
+// 29. 화면 크기 변경
 // ========================================
 
 window.addEventListener("resize", () => {
@@ -1135,16 +1339,22 @@ window.addEventListener("resize", () => {
 
 
 // ========================================
-// 26. 메인 게임 루프
+// 30. 메인 게임 루프
 // ========================================
 
 function animate() {
 
     requestAnimationFrame(animate);
 
-    const dt = Math.min(clock.getDelta(), 0.05);
+    const dt = Math.min(
+        clock.getDelta(),
+        0.05
+    );
 
     update(dt);
+
+    // 미니맵 실시간 갱신
+    updateMinimap();
 
     renderer.render(scene, camera);
 }
