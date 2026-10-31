@@ -707,7 +707,7 @@ function updateMinimap() {
     ctx.save();
 
     ctx.translate(playerX, playerY);
-    ctx.rotate(player.yaw);
+    ctx.rotate(-player.yaw);
 
     ctx.fillStyle = "#35ff72";
 
