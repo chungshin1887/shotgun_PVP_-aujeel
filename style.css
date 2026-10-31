@@ -5,21 +5,17 @@
     box-sizing: border-box;
 }
 
-html,
-body {
+html, body {
     width: 100%;
     height: 100%;
     overflow: hidden;
     background: #000;
-    color: #fff;
-    font-family: Arial, Helvetica, sans-serif;
+    color: white;
+    font-family: Arial, sans-serif;
 }
 
-/* =========================
-   게임 화면
-========================= */
-
-#game {
+/* 게임 화면 */
+#game-container {
     position: fixed;
     inset: 0;
     width: 100%;
@@ -27,16 +23,13 @@ body {
     z-index: 1;
 }
 
-#game canvas {
+#game-container canvas {
     display: block;
     width: 100%;
     height: 100%;
 }
 
-/* =========================
-   HUD
-========================= */
-
+/* HUD */
 #hud {
     position: fixed;
     inset: 0;
@@ -59,11 +52,9 @@ body {
     display: flex;
     justify-content: space-between;
     gap: 15px;
-
     background: rgba(0, 0, 0, 0.8);
     border: 1px solid #777;
     border-radius: 4px;
-
     font-size: 14px;
     font-weight: bold;
 }
@@ -72,7 +63,7 @@ body {
     color: #aaa;
 }
 
-#hp {
+#health {
     color: #ff5555;
 }
 
@@ -80,32 +71,28 @@ body {
     color: #ffff55;
 }
 
-#left {
+#enemy-count {
     color: #ff7777;
 }
 
 /* 조준점 */
-
 #crosshair {
     position: absolute;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-
-    color: white;
     font-size: 30px;
     font-weight: bold;
+    color: white;
     text-shadow: 0 0 5px black;
 }
 
-/* 메시지 */
-
+/* 게임 메시지 */
 #message {
     position: absolute;
     bottom: 35px;
     left: 50%;
     transform: translateX(-50%);
-
     color: #ffff66;
     font-size: 18px;
     font-weight: bold;
@@ -113,60 +100,31 @@ body {
     text-align: center;
 }
 
-#reload {
-    position: absolute;
-    bottom: 75px;
-    left: 50%;
-    transform: translateX(-50%);
-    color: #ffff66;
-    font-size: 16px;
-}
-
-#damage {
-    position: absolute;
-    inset: 0;
-    background: rgba(255, 0, 0, 0);
-    pointer-events: none;
-}
-
-/* =========================
-   미니맵
-========================= */
-
+/* 미니맵 */
 #minimap {
     position: fixed;
-    display: block;
-
     top: 20px;
     left: 20px;
-
     width: 180px;
     height: 180px;
-
+    display: block;
     z-index: 100;
-
     background: rgba(0, 0, 0, 0.9);
-    border: 2px solid #fff;
+    border: 2px solid white;
     border-radius: 8px;
-
     image-rendering: pixelated;
     pointer-events: none;
 }
 
-/* =========================
-   시작 / 일시정지 / 종료 화면
-========================= */
-
-.screen {
+/* 메뉴 오버레이 */
+#overlay {
     position: fixed;
     inset: 0;
-
+    z-index: 1000;
     display: flex;
     justify-content: center;
     align-items: center;
-
     background: rgba(0, 0, 0, 0.92);
-    z-index: 1000;
 }
 
 .screen-content {
@@ -177,15 +135,11 @@ body {
 
 .screen-content h1 {
     margin-bottom: 18px;
-
     color: #ff3333;
     font-size: clamp(35px, 7vw, 60px);
     font-weight: 900;
     letter-spacing: 5px;
-
-    text-shadow:
-        0 0 10px #ff0000,
-        0 0 25px #990000;
+    text-shadow: 0 0 10px red, 0 0 25px darkred;
 }
 
 .screen-content p {
@@ -195,19 +149,16 @@ body {
 }
 
 /* 버튼 */
-
 button {
-    margin: 15px;
+    display: block;
+    margin: 15px auto;
     padding: 14px 35px;
-
     background: #a80000;
     border: 2px solid #ff4444;
     border-radius: 4px;
-
     color: white;
     font-size: 18px;
     font-weight: bold;
-
     cursor: pointer;
     transition: 0.2s;
     pointer-events: auto;
@@ -216,7 +167,7 @@ button {
 button:hover {
     background: #ff2222;
     transform: scale(1.05);
-    box-shadow: 0 0 15px #ff0000;
+    box-shadow: 0 0 15px red;
 }
 
 button:active {
@@ -224,7 +175,6 @@ button:active {
 }
 
 /* 조작법 */
-
 .controls {
     margin-top: 25px;
     color: #ccc;
@@ -236,16 +186,12 @@ button:active {
     margin: 5px;
 }
 
-/* 숨김 처리 */
-
+/* 숨김 */
 .hidden {
     display: none !important;
 }
 
-/* =========================
-   작은 화면 대응
-========================= */
-
+/* 작은 화면 */
 @media (max-width: 600px) {
     #minimap {
         width: 140px;
