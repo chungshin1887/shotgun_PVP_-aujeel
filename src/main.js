@@ -31,6 +31,116 @@ renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 container.appendChild(renderer.domElement);
 
 const clock = new THREE.Clock();
+// ========================================
+// 미니맵 설정
+// ========================================
+
+const minimap = document.getElementById("minimap");
+const minimapCtx = minimap.getContext("2d");
+
+const MINI_CELL = 14;
+
+function updateMinimap() {
+
+    const ctx = minimapCtx;
+    const size = minimap.width;
+
+    ctx.clearRect(0, 0, size, size);
+
+    // 배경
+    ctx.fillStyle = "#101010";
+    ctx.fillRect(0, 0, size, size);
+
+    const mapSize = MAP_WIDTH * MINI_CELL;
+
+    const offsetX = (size - mapSize) / 2;
+    const offsetY = (size - mapSize) / 2;
+
+    // 벽과 통로 표시
+    for (let row = 0; row < MAP_HEIGHT; row++) {
+        for (let col = 0; col < MAP_WIDTH; col++) {
+
+            const x = offsetX + col * MINI_CELL;
+            const y = offsetY + row * MINI_CELL;
+
+            if (MAP[row][col] === "1") {
+                ctx.fillStyle = "#77716a";
+            } else {
+                ctx.fillStyle = "#252525";
+            }
+
+            ctx.fillRect(
+                x,
+                y,
+                MINI_CELL - 1,
+                MINI_CELL - 1
+            );
+        }
+    }
+
+    // 출구 표시
+    ctx.fillStyle = "#00eaff";
+
+    ctx.fillRect(
+        offsetX + 9 * MINI_CELL + 3,
+        offsetY + 9 * MINI_CELL + 3,
+        8,
+        8
+    );
+
+    // 적 위치 표시
+    for (const enemy of enemies) {
+
+        if (!enemy.alive) continue;
+
+        const col = enemy.group.position.x / CELL
+            + (MAP_WIDTH - 1) / 2;
+
+        const row = enemy.group.position.z / CELL
+            + (MAP_HEIGHT - 1) / 2;
+
+        const x = offsetX + (col + 0.5) * MINI_CELL;
+        const y = offsetY + (row + 0.5) * MINI_CELL;
+
+        ctx.fillStyle = "#ff3030";
+        ctx.beginPath();
+        ctx.arc(x, y, 4, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    // 플레이어 위치
+    const playerCol = player.x / CELL
+        + (MAP_WIDTH - 1) / 2;
+
+    const playerRow = player.z / CELL
+        + (MAP_HEIGHT - 1) / 2;
+
+    const playerX = offsetX + (playerCol + 0.5) * MINI_CELL;
+    const playerY = offsetY + (playerRow + 0.5) * MINI_CELL;
+
+    // 플레이어 방향 화살표
+    ctx.save();
+
+    ctx.translate(playerX, playerY);
+    ctx.rotate(player.yaw);
+
+    ctx.fillStyle = "#35ff72";
+    ctx.beginPath();
+
+    ctx.moveTo(0, -7);
+    ctx.lineTo(-5, 5);
+    ctx.lineTo(5, 5);
+
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.restore();
+
+    // 테두리
+    ctx.strokeStyle = "#c99a4a";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(0, 0, size, size);
+}
 
 
 // ========================================
