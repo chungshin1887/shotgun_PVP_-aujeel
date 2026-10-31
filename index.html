@@ -1,9 +1,11 @@
+
 <!DOCTYPE html>
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PVP Dungeon</title>
+
     <link rel="stylesheet" href="style.css">
 
     <script type="importmap">
@@ -16,44 +18,56 @@
 </head>
 
 <body>
+
+    <!-- 게임 화면 -->
     <div id="game-container"></div>
 
+    <!-- HUD -->
     <div id="hud">
-        <canvas id="minimap" width="180" height="180"></canvas>
+
+        <div class="hud-top">
+            <div class="game-title">PVP DUNGEON</div>
+        </div>
+
         <div class="hud-left">
-            <div class="hud-box">
-                <span>HEALTH</span>
-                <strong id="health">100</strong>
+            <div class="status-box">
+                <span class="status-label">HEALTH</span>
+                <span id="health">100</span>
             </div>
-            <div class="hud-box">
-                <span>ENEMIES</span>
-                <strong id="enemy-count">0</strong>
+
+            <div class="status-box">
+                <span class="status-label">AMMO</span>
+                <span id="ammo">12 / 60</span>
+            </div>
+
+            <div class="status-box">
+                <span class="status-label">ENEMIES</span>
+                <span id="enemy-count">0</span>
             </div>
         </div>
 
-        <div class="hud-right">
-            <div class="hud-box">
-                <span>AMMO</span>
-                <strong id="ammo">12 / 60</strong>
-            </div>
+        <div class="crosshair">+</div>
+
+        <div class="hud-bottom">
+            <div id="message"></div>
         </div>
 
-        <div id="crosshair">+</div>
-        <div id="message"></div>
     </div>
 
-    <div id="overlay">
-        <div class="menu">
-            <h1 id="menu-title">PVP DUNGEON</h1>
-            <p id="menu-description">RETRO FIRST PERSON DUNGEON SHOOTER</p>
+    <!-- 미니맵 -->
+    <canvas id="minimap" width="180" height="180"></canvas>
+
+    <!-- 시작 화면 -->
+    <div id="start-screen" class="screen">
+        <div class="screen-content">
+            <h1>PVP DUNGEON</h1>
+            <p>RETRO FIRST PERSON SHOOTER</p>
 
             <button id="start-button">START GAME</button>
-            <button id="resume-button" class="hidden">RESUME</button>
-            <button id="restart-button" class="hidden">RESTART</button>
 
             <div class="controls">
-                <p>WASD : MOVE</p>
-                <p>← → : TURN VIEW</p>
+                <p>W A S D : MOVE</p>
+                <p>ARROW KEYS : TURN</p>
                 <p>SPACE : SHOOT</p>
                 <p>R : RELOAD</p>
                 <p>ESC : PAUSE</p>
@@ -61,6 +75,25 @@
         </div>
     </div>
 
+    <!-- 일시정지 화면 -->
+    <div id="pause-screen" class="screen hidden">
+        <div class="screen-content">
+            <h1>PAUSED</h1>
+            <button id="resume-button">RESUME</button>
+        </div>
+    </div>
+
+    <!-- 종료 화면 -->
+    <div id="end-screen" class="screen hidden">
+        <div class="screen-content">
+            <h1 id="end-title">GAME OVER</h1>
+            <p id="end-message"></p>
+            <button id="restart-button">RESTART</button>
+        </div>
+    </div>
+
+    <!-- 게임 JavaScript -->
     <script type="module" src="src/main.js"></script>
+
 </body>
 </html>
