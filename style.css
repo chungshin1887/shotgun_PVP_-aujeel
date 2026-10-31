@@ -1,223 +1,173 @@
-
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Noto+Sans+KR:wght@400;700&display=swap');
-
 * {
+    margin: 0;
+    padding: 0;
     box-sizing: border-box;
 }
 
-html, body {
-    margin: 0;
-    width: 100%;
-    height: 100%;
+body {
+    width: 100vw;
+    height: 100vh;
     overflow: hidden;
-    background: #080c13;
-    color: #eaf5ff;
-    font-family: 'Noto Sans KR', sans-serif;
+    background: #080808;
+    color: white;
+    font-family: Arial, sans-serif;
 }
 
-#game, canvas {
-    position: fixed;
-    inset: 0;
+#game-container {
+    position: absolute;
     width: 100%;
     height: 100%;
+}
+
+canvas {
     display: block;
+}
+
+#hud {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 5;
+}
+
+.hud-left {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    display: flex;
+    gap: 12px;
+}
+
+.hud-right {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+}
+
+.hud-box {
+    min-width: 110px;
+    padding: 12px 16px;
+    background: rgba(0, 0, 0, 0.75);
+    border: 1px solid #777;
+    text-align: center;
+}
+
+.hud-box span {
+    display: block;
+    font-size: 11px;
+    color: #aaa;
+    margin-bottom: 5px;
+    letter-spacing: 2px;
+}
+
+.hud-box strong {
+    font-size: 22px;
+    color: #fff;
+}
+
+#crosshair {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 30px;
+    font-weight: bold;
+    color: white;
+    text-shadow: 0 0 5px black;
+}
+
+#message {
+    position: absolute;
+    top: 60%;
+    left: 50%;
+    transform: translateX(-50%);
+    color: #ffdf75;
+    font-size: 18px;
+    font-weight: bold;
+    text-shadow: 0 0 5px black;
+    white-space: nowrap;
+}
+
+#overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.85);
+}
+
+.menu {
+    width: min(90%, 460px);
+    padding: 40px;
+    text-align: center;
+    background: #171717;
+    border: 2px solid #777;
+    box-shadow: 0 0 30px rgba(0, 0, 0, 0.8);
+}
+
+.menu h1 {
+    font-size: 36px;
+    letter-spacing: 4px;
+    margin-bottom: 12px;
+    color: #e6b75b;
+}
+
+.menu > p {
+    color: #aaa;
+    font-size: 12px;
+    letter-spacing: 2px;
+    margin-bottom: 28px;
+}
+
+button {
+    width: 100%;
+    padding: 14px;
+    margin-top: 10px;
+    border: 1px solid #e6b75b;
+    background: #a56b20;
+    color: white;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+button:hover {
+    background: #d18b2e;
+    transform: scale(1.03);
+}
+
+.controls {
+    margin-top: 28px;
+    padding-top: 18px;
+    border-top: 1px solid #444;
+    color: #aaa;
+    font-size: 12px;
+    line-height: 2;
+    text-align: left;
 }
 
 .hidden {
     display: none !important;
 }
 
-/* 화면 공통 */
-
-.screen {
-    position: fixed;
-    inset: 0;
-    z-index: 5;
-    display: grid;
-    place-items: center;
-    padding: 20px;
-    background: #050912dc;
-}
-
-.panel {
-    width: min(500px, 100%);
-    padding: 35px;
-    text-align: center;
-    background: #0b1421f2;
-    border: 1px solid #52677e;
-    box-shadow: 0 0 50px #000;
-}
-
-.eyebrow {
-    font: 12px Orbitron;
-    color: #75d5ff;
-    letter-spacing: 3px;
-}
-
-h1 {
-    font: 900 clamp(38px, 8vw, 58px) Orbitron;
-    margin: 12px 0;
-}
-
-h1 span, h2 {
-    color: #75d5ff;
-}
-
-h2 {
-    font: 700 28px Orbitron;
-}
-
-/* 조작키 안내 */
-
-.keys {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-    margin: 25px 0;
-}
-
-.keys span {
-    padding: 10px;
-    background: #172538;
-    font-size: 12px;
-}
-
-.keys b {
-    display: block;
-    color: #83d9ff;
-    font-family: Orbitron;
-    margin-bottom: 4px;
-}
-
-/* 버튼 */
-
-button {
-    min-width: 160px;
-    padding: 13px 22px;
-    border: 0;
-    background: #75d5ff;
-    color: #06111b;
-    font-weight: 700;
-    font-size: 15px;
-    cursor: pointer;
-}
-
-button:hover {
-    background: #b2eaff;
-}
-
-.secondary {
-    display: block;
-    margin: 12px auto 0;
-    background: #34465c;
-    color: white;
-}
-
-.panel small {
-    display: block;
-    margin-top: 18px;
-    color: #8596a8;
-}
-
-/* HUD */
-
-#hud {
-    position: fixed;
-    z-index: 3;
-    top: 16px;
-    left: 16px;
-    right: 16px;
-    display: flex;
-    justify-content: space-between;
-    pointer-events: none;
-}
-
-#hud div {
-    padding: 9px 14px;
-    background: #07111dcc;
-    border: 1px solid #58748b;
-    font: 10px Orbitron;
-    color: #9eb7ca;
-}
-
-#hud strong {
-    display: block;
-    font-size: 20px;
-    color: white;
-    margin-top: 4px;
-}
-
-/* 조준점 */
-
-#crosshair {
-    position: fixed;
-    z-index: 3;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    font: 28px Arial;
-    color: white;
-    text-shadow: 0 0 7px #69d7ff;
-    pointer-events: none;
-}
-
-/* 메시지 */
-
-#message, #reload {
-    position: fixed;
-    z-index: 4;
-    left: 50%;
-    transform: translateX(-50%);
-    background: #07111ddd;
-    padding: 9px 15px;
-    border: 1px solid #54768d;
-    pointer-events: none;
-}
-
-#message {
-    bottom: 25px;
-}
-
-#reload {
-    top: 60%;
-    font: 700 13px Orbitron;
-    color: #8de1ff;
-}
-
-/* 피격 효과 */
-
-#damage {
-    position: fixed;
-    inset: 0;
-    z-index: 2;
-    pointer-events: none;
-}
-
-@media(max-width: 500px) {
-    .panel {
-        padding: 22px 14px;
+@media (max-width: 600px) {
+    .menu {
+        padding: 25px;
     }
 
-    .keys {
-        gap: 5px;
+    .menu h1 {
+        font-size: 27px;
     }
 
-    .keys span {
-        padding: 7px;
-        font-size: 11px;
+    .hud-box {
+        min-width: 80px;
+        padding: 8px;
     }
 
-    #hud {
-        top: 6px;
-        left: 6px;
-        right: 6px;
-    }
-
-    #hud div {
-        padding: 7px;
-    }
-
-    #hud strong {
-        font-size: 15px;
+    .hud-box strong {
+        font-size: 18px;
     }
 }
