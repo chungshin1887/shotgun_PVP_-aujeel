@@ -1,3 +1,4 @@
+
 import * as THREE from "three";
 
 // ========================================
@@ -305,7 +306,6 @@ function canMoveTo(x, z) {
 // 9. 적 생성
 // ========================================
 
-// 맵에서 벽이 아닌 칸에 적 배치
 const enemyPositions = [
     { x: -8, z: -16 },
     { x: 12, z: -16 },
@@ -318,7 +318,6 @@ function createEnemy(x, z) {
 
     const group = new THREE.Group();
 
-    // 밝은 붉은색 몸체
     const bodyMaterial = new THREE.MeshStandardMaterial({
         color: 0xff2929,
         emissive: 0x8b0000,
@@ -334,7 +333,6 @@ function createEnemy(x, z) {
     body.position.y = 1.0;
     body.castShadow = true;
 
-    // 머리
     const headMaterial = new THREE.MeshStandardMaterial({
         color: 0xff7777,
         emissive: 0x550000,
@@ -349,7 +347,6 @@ function createEnemy(x, z) {
     head.position.y = 2.05;
     head.castShadow = true;
 
-    // 빛나는 눈
     const eyeMaterial = new THREE.MeshBasicMaterial({
         color: 0xffff00
     });
@@ -366,7 +363,6 @@ function createEnemy(x, z) {
 
     group.add(body, head, leftEye, rightEye);
 
-    // 적 주변의 붉은 빛
     const enemyLight = new THREE.PointLight(
         0xff2222,
         1.5,
@@ -376,7 +372,6 @@ function createEnemy(x, z) {
     enemyLight.position.y = 2;
     group.add(enemyLight);
 
-    // 체력 게이지용 캔버스
     const healthCanvas = document.createElement("canvas");
 
     healthCanvas.width = 128;
@@ -457,7 +452,6 @@ function updateEnemyHealthBar(enemy) {
 
     ctx.clearRect(0, 0, width, height);
 
-    // 게이지 배경
     ctx.fillStyle = "#222222";
 
     ctx.fillRect(
@@ -467,7 +461,6 @@ function updateEnemyHealthBar(enemy) {
         height
     );
 
-    // 체력에 따른 색상
     if (ratio > 0.6) {
 
         ctx.fillStyle = "#35ed62";
@@ -482,7 +475,6 @@ function updateEnemyHealthBar(enemy) {
 
     }
 
-    // 현재 체력
     ctx.fillRect(
         2,
         2,
@@ -490,7 +482,6 @@ function updateEnemyHealthBar(enemy) {
         height - 4
     );
 
-    // 테두리
     ctx.strokeStyle = "#ffffff";
     ctx.lineWidth = 2;
 
@@ -503,7 +494,6 @@ function updateEnemyHealthBar(enemy) {
 
     enemy.healthTexture.needsUpdate = true;
 
-    // 한 번이라도 맞으면 게이지 표시
     enemy.healthBar.visible = true;
 }
 
@@ -636,7 +626,6 @@ function updateMinimap() {
 
     ctx.clearRect(0, 0, size, size);
 
-    // 배경
     ctx.fillStyle = "#101010";
     ctx.fillRect(0, 0, size, size);
 
@@ -645,7 +634,6 @@ function updateMinimap() {
     const offsetX = (size - mapSize) / 2;
     const offsetY = (size - mapSize) / 2;
 
-    // 벽과 통로
     for (let row = 0; row < MAP_HEIGHT; row++) {
 
         for (let col = 0; col < MAP_WIDTH; col++) {
@@ -716,7 +704,6 @@ function updateMinimap() {
     const playerY =
         offsetY + (playerRow + 0.5) * MINI_CELL;
 
-    // 플레이어 방향
     ctx.save();
 
     ctx.translate(playerX, playerY);
@@ -734,7 +721,6 @@ function updateMinimap() {
 
     ctx.restore();
 
-    // 테두리
     ctx.strokeStyle = "#c99a4a";
     ctx.lineWidth = 2;
 
@@ -761,7 +747,6 @@ function look(dt) {
         player.yaw -= TURN_SPEED * dt;
     }
 
-    // 상하 시점 이동 제거
     camera.rotation.y = player.yaw;
     camera.rotation.x = 0;
 }
@@ -937,62 +922,83 @@ function shoot() {
         return;
     }
 
+    // 총알 1발 사용
     player.ammo--;
     player.shotCooldown = 0.25;
 
+    // 무기 반동
     weapon.position.z = -0.5;
 
     window.setTimeout(() => {
         weapon.position.z = -0.65;
     }, 80);
 
-    // 중요: 움직인 적과 벽의 실제 위치를 갱신
+    // 적과 카메라의 월드 좌표를 최신 상태로 갱신
     scene.updateMatrixWorld(true);
     camera.updateMatrixWorld(true);
 
+    // 화면 정중앙 방향으로 발사
     raycaster.setFromCamera(
         new THREE.Vector2(0, 0),
         camera
     );
 
-    const activeEnemyMeshes = enemyMeshes.filter(mesh => {
-        return mesh.userData.enemy?.alive;
-    });
+    const ray = raycaster.ray;
 
-    const enemyHits = raycaster.intersectObjects(
-        activeEnemyMeshes,
-        false
-    );
-
+    // 가장 가까운 벽까지의 거리
     const wallHits = raycaster.intersectObjects(
         walls,
         false
     );
 
+    const nearestWallDistance = wallHits.length > 0
+        ? wallHits[0].distance
+        : Infinity;
+
     let hitEnemy = null;
+    let nearestEnemyDistance = Infinity;
 
-    if (enemyHits.length > 0) {
+    // 적 전체를 감싸는 구형 적중 판정
+    for (const enemy of enemies) {
 
-        const firstHit = enemyHits[0];
+        if (!enemy.alive) continue;
 
-        const nearestWall = wallHits.length > 0
-            ? wallHits[0].distance
-            : Infinity;
+        const enemyCenter = enemy.group.localToWorld(
+            new THREE.Vector3(0, 1.3, 0)
+        );
 
-        if (firstHit.distance < nearestWall) {
-            hitEnemy = firstHit.object.userData.enemy;
+        const hitSphere = new THREE.Sphere(
+            enemyCenter,
+            1.05
+        );
+
+        const hitPoint = ray.intersectSphere(
+            hitSphere,
+            new THREE.Vector3()
+        );
+
+        if (!hitPoint) continue;
+
+        const hitDistance = ray.origin.distanceTo(hitPoint);
+
+        // 벽이 적보다 앞에 있으면 적중하지 않음
+        if (hitDistance >= nearestWallDistance) continue;
+
+        // 가장 가까운 적 선택
+        if (hitDistance < nearestEnemyDistance) {
+            nearestEnemyDistance = hitDistance;
+            hitEnemy = enemy;
         }
     }
 
-    if (hitEnemy && hitEnemy.alive) {
+    if (hitEnemy) {
 
-        // 한 발에 적 처치
+        // 적 한 명당 총알 1발로 처치
         hitEnemy.hp = 0;
         hitEnemy.alive = false;
 
         scene.remove(hitEnemy.group);
 
-        // 적의 몸체와 머리를 발사 판정 목록에서 제거
         const bodyIndex = enemyMeshes.indexOf(hitEnemy.body);
         const headIndex = enemyMeshes.indexOf(hitEnemy.head);
 
@@ -1013,14 +1019,15 @@ function shoot() {
 
     updateHUD();
 
-    const remaining = enemies.filter(
+    const remainingEnemies = enemies.filter(
         enemy => enemy.alive
     ).length;
 
-    if (remaining === 0) {
+    if (remainingEnemies === 0) {
         showMessage("ALL ENEMIES DEFEATED!");
     }
 }
+
 
 // ========================================
 // 20. 재장전
@@ -1107,7 +1114,6 @@ function endGame(victory) {
 
     startButton.classList.add("hidden");
     resumeButton.classList.add("hidden");
-
     restartButton.textContent = "다시 시작하기";
     restartButton.classList.remove("hidden");
 }
@@ -1166,8 +1172,8 @@ window.addEventListener("keydown", event => {
         pauseGame();
     }
 
-    // R: 재장전
-    if (key === "r" && running) {
+    // R: 재장전 (키를 처음 눌렀을 때만 실행)
+    if (key === "r" && running && !event.repeat) {
         reload();
     }
 
